@@ -1,2 +1,2 @@
-# bibcoin
+# bibtoken
 
