@@ -1,2 +1,2 @@
-# bibtoken
+# bib token平台币
 
