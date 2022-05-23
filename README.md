@@ -17,25 +17,31 @@ npm ci
 To compile the solidity source code
 
 ```bash
-npm run compile
+yarn compile
 ```
 
 To run ERC20 RedPacket unit test
 
 ```bash
-npm run test:normal
+yarn test
 ```
 
 To run ERC721/NFT RedPacket unit test
 
 ```bash
-npm run test:erc721
+yarn test
 ```
 
 To deploy the smart contract on Ethereum ropsten testnet
 
 ```bash
-npm run deploy:ropsten
+yarn deploy
+
+npx hardhat run deploy/deploy_bibtoken.js --network rinkeby
+
+
+yarn deploy_crowdsale
+npx hardhat run deploy/deploy_crowdsale.js --network rinkeby
 ```
 
 ## Deployed Contract Address
