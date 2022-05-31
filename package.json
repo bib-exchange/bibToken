@@ -8,14 +8,13 @@
     "test:coverage": "hardhat coverage",
     "lint": "hardhat check",
     "compile": "hardhat compile",
-    "deploy": "hardhat deploy --network",
+    "deploy": "hardhat run deploy/deploy_bibtoken.js --network bsc_test",
     "test:erc721": "hardhat test ./test/TestRP_erc721.js",
     "test:normal": "hardhat test ./test/TestRedPacket.js",
     "prettier:solidity": "prettier --write contracts/**/*.sol",
     "format": "prettier --write './test/*.js' './deploy/*.ts'"
   },
   "dependencies": {
-    "@nomiclabs/hardhat-etherscan": "^3.0.3",
     "@nomiclabs/hardhat-solhint": "^2.0.0",
     "@openzeppelin/contracts": "^4.0.0",
     "@openzeppelin/contracts-upgradeable": "^4.5.2"
@@ -23,6 +22,7 @@
   "devDependencies": {
     "@nomiclabs/buidler": "^1.4.8",
     "@nomiclabs/hardhat-ethers": "^2.0.5",
+    "@nomiclabs/hardhat-etherscan": "^3.0.4",
     "@nomiclabs/hardhat-truffle5": "^2.0.5",
     "@nomiclabs/hardhat-waffle": "^2.0.3",
     "@nomiclabs/hardhat-web3": "^2.0.0",
