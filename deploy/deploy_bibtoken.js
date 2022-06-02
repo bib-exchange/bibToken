@@ -15,11 +15,11 @@ async function main() {
   // manually to make sure everything is compiled
   // await hre.run('compile');
    // 1) 部署LibMath库合约
-   libFactory = await ethers.getContractFactory("IterableMapping");
-   libObj = await libFactory.deploy()
+//    libFactory = await ethers.getContractFactory("IterableMapping");
+//    libObj = await libFactory.deploy()
 
   // We get the contract to deploy
-  const BIBToken = await hre.ethers.getContractFactory("BIBToken");
+  const BIBToken = await hre.ethers.getContractFactory("BNBRewardToken");
   const bibToken = await BIBToken.deploy();
 
   await bibToken.deployed();
