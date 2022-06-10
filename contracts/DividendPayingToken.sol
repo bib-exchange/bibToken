@@ -11,7 +11,6 @@ import "./DividendPayingTokenOptionalInterface.sol";
 
 
 /// @title Dividend-Paying Token
-/// @author Roger Wu (https://github.com/roger-wu)
 /// @dev A mintable ERC20 token that allows anyone to pay and distribute ether
 ///  to token holders as dividends and allows token holders to withdraw their dividends.
 ///  Reference: the source code of PoWH3D: https://etherscan.io/address/0xB3775fB83F7D12A36E0475aBdD1FCA35c091efBe#code

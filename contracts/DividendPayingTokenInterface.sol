@@ -4,7 +4,6 @@ pragma solidity ^0.8.6;
 
 
 /// @title Dividend-Paying Token Interface
-/// @author Roger Wu (https://github.com/roger-wu)
 /// @dev An interface for a dividend-paying token contract.
 interface DividendPayingTokenInterface {
   /// @notice View the amount of dividend in wei that an address can withdraw.

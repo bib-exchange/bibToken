@@ -96,10 +96,10 @@ contract BIBRewardToken is ERC20, Ownable {
     }
  
     constructor() ERC20("BIBTOKEN", "BIB") {
-        buyFee.rewardFee = 6;
-        buyFee.blackholeFee = 1;
-        buyFee.liquidityFee = 3;
-        totalBuyFee = 10;
+        buyFee.rewardFee = 0;
+        buyFee.blackholeFee = 0;
+        buyFee.liquidityFee = 0;
+        totalBuyFee = 0;
 
         sellFee.rewardFee = 8;
         sellFee.blackholeFee = 2;
@@ -453,10 +453,10 @@ contract BIBRewardToken is ERC20, Ownable {
 
         uint256 initialBalance = address(this).balance;
 
-        // swap tokens for ETH
-        swapTokensForUsdt(half); // <- this breaks the ETH -> HATE swap when swap+liquify is triggered
+        // swap tokens for BUSD
+        swapTokensForUsdt(half); // <- this breaks the BUSD -> HATE swap when swap+liquify is triggered
 
-        // how much ETH did we just swap into?
+        // how much BUSD did we just swap into?
         uint256 newBalance = address(this).balance.sub(initialBalance);
 
         // add liquidity to uniswap
