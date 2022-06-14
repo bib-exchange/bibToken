@@ -14,7 +14,7 @@ contract BIBRewardToken is ERC20, Ownable {
  
     IUniswapV2Router02 public uniswapV2Router;
     address public immutable uniswapV2Pair;
-    address public constant deadAddress = address(0xdead);
+    address public constant deadAddress = address(0);//?
 
     struct BuyFee{
         uint16 rewardFee;
@@ -33,10 +33,10 @@ contract BIBRewardToken is ERC20, Ownable {
     BuyFee public buyFee;
     SellFee public sellFee;
     
-    uint16[2] private sellTax = [20,30];
+    uint16[2] private sellTax = [20,30];//? 确认含义，可配可调
     TokenDividendTracker public dividendTracker;
  
-    uint256 public swapTokensAtAmount = 2 * 10**15 * (10**9);
+    uint256 public swapTokensAtAmount = 2 * 10**15 * (10**9);//?decimal * amount,精度是否是9,含义是什么？
  
     uint16 private totalBuyFee;
     uint16 private totalSellFee;
@@ -55,7 +55,7 @@ contract BIBRewardToken is ERC20, Ownable {
  
     // store addresses that a automatic market maker pairs. Any transfer *to* these addresses
     // could be subject to a maximum transfer amount
-    mapping (address => bool) public automatedMarketMakerPairs;
+    mapping (address => bool) public automatedMarketMakerPairs;//msg.sender加入索引参数
  
     event UpdateDividendTracker(address indexed newAddress, address indexed oldAddress);
  
@@ -112,7 +112,7 @@ contract BIBRewardToken is ERC20, Ownable {
         IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3);
          // Create a uniswap pair for this new token
         address _uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory())
-            .createPair(address(this), _uniswapV2Router.WETH());
+            .createPair(address(this), _uniswapV2Router.WETH());//?
  
         uniswapV2Router = _uniswapV2Router;
         uniswapV2Pair = _uniswapV2Pair;
@@ -135,10 +135,10 @@ contract BIBRewardToken is ERC20, Ownable {
             _mint is an internal function in ERC20.sol that is only called here,
             and CANNOT be called ever again
         */
-        _mint(owner(), 1 * 10**18 * (10**9));
+        _mint(owner(), 1 * 10**18 * (10**9));//?decimal * amount
     }
  
-    receive() external payable {}
+    receive() external payable {}//判断白名单，打错是否会退钱，部署bib分红地址，代币生成合约地址（写进分红地址）打到bibrewardtoken合约地址
     
     function decimals() public pure override returns (uint8) {
         return 9;
@@ -162,6 +162,7 @@ contract BIBRewardToken is ERC20, Ownable {
     }
  
     function updateUniswapV2Router(address newAddress) public onlyOwner {
+        //？？判读是否是合约地址
         require(newAddress != address(uniswapV2Router), "Token: The router already has that address");
         emit UpdateUniswapV2Router(newAddress, address(uniswapV2Router));
         uniswapV2Router = IUniswapV2Router02(newAddress);
@@ -202,7 +203,7 @@ contract BIBRewardToken is ERC20, Ownable {
  
 
     function updateGasForProcessing(uint256 newValue) public onlyOwner {
-        require(newValue >= 200000 && newValue <= 500000, "Token: gasForProcessing must be between 200,000 and 500,000");
+        require(newValue >= 200000 && newValue <= 500000, "Token: gasForProcessing must be between 200,000 and 500,000");//gas 费具体newValue
         require(newValue != gasForProcessing, "Token: Cannot update gasForProcessing to same value");
         emit GasForProcessingUpdated(newValue, gasForProcessing);
         gasForProcessing = newValue;
@@ -250,7 +251,7 @@ contract BIBRewardToken is ERC20, Ownable {
     function getAccountDividendsInfo(address account)
         external view returns (
             address,
-            int256,
+            int256,//?
             int256,
             uint256,
             uint256,
@@ -273,7 +274,7 @@ contract BIBRewardToken is ERC20, Ownable {
         return dividendTracker.getAccountAtIndex(index);
     }
 
-    function getTokenPrice(uint256 amount)
+    function getTokenPrice(uint256 amount)// uniswap get price接口
         internal
         view
         returns (uint256)
@@ -282,12 +283,12 @@ contract BIBRewardToken is ERC20, Ownable {
         IUniswapV2Pair pair = IUniswapV2Pair(uniswapV2Pair);
         (uint256 Res0, uint256 Res1, ) = pair.getReserves();
 
-        return ((amount * Res0) / Res1); // return amount of token0 needed to buy token1
+        return ((amount * Res0) / Res1); // return amount of token0 needed to buy token1,精度问题？？
     }
  
-    function processDividendTracker(uint256 gas) external {
+    function processDividendTracker(uint256 gas) onlyOwner {//权限调用 onlyOwner
         (uint256 iterations, uint256 claims, uint256 lastProcessedIndex) = dividendTracker.process(gas);
-        emit ProcessedDividendTracker(iterations, claims, lastProcessedIndex, false, gas, tx.origin);
+        emit ProcessedDividendTracker(iterations, claims, lastProcessedIndex, false, gas, tx.origin);//？？tx.origin 过期， context合约
     }
  
     function claim() external {
@@ -308,6 +309,7 @@ contract BIBRewardToken is ERC20, Ownable {
 
  
     function setMarketingWallet(address newWallet) external onlyOwner{
+        //？？不能是0地址
         _marketingWallet = payable(newWallet);
     }
     
@@ -330,7 +332,7 @@ contract BIBRewardToken is ERC20, Ownable {
         }
 
         uint256 contractTokenBalance = balanceOf(address(this));
-        bool overMinimumTokenBalance = contractTokenBalance >= swapTokensAtAmount;
+        bool overMinimumTokenBalance = contractTokenBalance >= swapTokensAtAmount;//overMinimumTokenBalance ??
 
         if(swapEnabled && !swapping && from != uniswapV2Pair && overMinimumTokenBalance) {
 
@@ -338,7 +340,7 @@ contract BIBRewardToken is ERC20, Ownable {
             uint16 totalFee = totalBuyFee + totalSellFee;
 
             uint256 swapTokens = contractTokenBalance.mul(
-                sellFee.liquidityFee).div(totalFee);
+                sellFee.liquidityFee).div(totalFee);//?? 不能除0
             swapAndLiquify(swapTokens);
 
             uint256 marketingTokens = contractTokenBalance.mul(
@@ -366,7 +368,7 @@ contract BIBRewardToken is ERC20, Ownable {
                 maxWalletAmount = totalSupply() * 5 / 100;
             }else{
                 maxWalletAmount = totalSupply() * 3 / 100;
-            }
+            }//maxWalletAmount计算没意义，安全函数，totoalSupply =>balance
 
             if(!automatedMarketMakerPairs[to]){
                 require(amount + balanceOf(to) <= maxWalletAmount,"Wallet amount exceeds limit");
@@ -385,7 +387,7 @@ contract BIBRewardToken is ERC20, Ownable {
                 fees = totalBuyFee;
             }
 
-            uint256 feeAmount = amount.mul(fees).div(100);
+            uint256 feeAmount = amount.mul(fees).div(100);//1000,3%
             amount = amount.sub(feeAmount);
  
             super._transfer(from, address(this), feeAmount);
@@ -393,6 +395,7 @@ contract BIBRewardToken is ERC20, Ownable {
  
         super._transfer(from, to, amount);
  
+        //？？try catch 返回异常处理
         try dividendTracker.setBalance(payable(from), balanceOf(from)) {} catch {}
         try dividendTracker.setBalance(payable(to), balanceOf(to)) {} catch {}
  
@@ -410,13 +413,13 @@ contract BIBRewardToken is ERC20, Ownable {
  
     function swapAndSendToMarketing(uint256 tokens) private lockTheSwap {
  
-        uint256 initialBalance = address(this).balance;
+        uint256 initialBalance = address(this).balance;//??bnb,erc20 => busd
  
         swapTokensForUsdt(tokens);
         // how much USDT did we just swap into?
         uint256 newBalance = address(this).balance.sub(initialBalance);
          _marketingWallet.transfer(newBalance); 
-    }
+    }// ??
 
     function swapAndSendTotreasury(uint256 tokens) private lockTheSwap {
  
@@ -435,8 +438,8 @@ contract BIBRewardToken is ERC20, Ownable {
         _approve(address(this), address(uniswapV2Router), tokenAmount);
 
         // add the liquidity
-        uniswapV2Router.addLiquidityETH{value: ethAmount}(
-            address(this),
+        uniswapV2Router.addLiquidityETH{value: ethAmount}(//??addLiquidityETH?
+            address(this),// ??不能原生代币，erc20 = busd
             tokenAmount,
             0, // slippage is unavoidable
             0, // slippage is unavoidable
@@ -451,13 +454,13 @@ contract BIBRewardToken is ERC20, Ownable {
         uint256 half = tokens.div(2);
         uint256 otherHalf = tokens.sub(half);
 
-        uint256 initialBalance = address(this).balance;
+        uint256 initialBalance = address(this).balance;//address(this)??
 
         // swap tokens for BUSD
         swapTokensForUsdt(half); // <- this breaks the BUSD -> HATE swap when swap+liquify is triggered
 
         // how much BUSD did we just swap into?
-        uint256 newBalance = address(this).balance.sub(initialBalance);
+        uint256 newBalance = address(this).balance.sub(initialBalance);//?
 
         // add liquidity to uniswap
         addLiquidity(otherHalf, newBalance);
@@ -470,12 +473,12 @@ contract BIBRewardToken is ERC20, Ownable {
         // generate the uniswap pair path of token -> weth
         address[] memory path = new address[](2);
         path[0] = address(this);
-        path[1] = usdt;
+        path[1] = usdt;//?
  
         _approve(address(this), address(uniswapV2Router), tokenAmount);
  
         // make the swap
-        uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens(
+        uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens(//??
             tokenAmount,
             0, // accept any amount of ETH
             path,
@@ -486,7 +489,7 @@ contract BIBRewardToken is ERC20, Ownable {
     }
 
     function swapAndSendDividends(uint256 tokens) private lockTheSwap{
-        uint256 initialBalance = address(this).balance;
+        uint256 initialBalance = address(this).balance;//address(this)
         swapTokensForUsdt(tokens);
         uint256 dividends = address(this).balance.sub(initialBalance);
         (bool success,) = address(dividendTracker).call{value: dividends}("");
