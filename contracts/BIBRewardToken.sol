@@ -40,8 +40,6 @@ contract BIBRewardToken is ERC20, Ownable {
     address public constant BUSD = 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56; 
     //0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56 bsc testnet
     //0x78867BbEeF44f2326bF8DDd1941a4439382EF2A7 bsc mainnet
-
-    address public usdt = 0x853875823CacE9418c292D8B41C1c192D3Ab5f1a;//bsc testnet
     address payable _marketingWallet = payable(address(0x8F7C10f725853323aF9aD428aCBaa3BFdD1D9A2B));
     address payable _treasuryWallet = payable(address(0x47Eb130179cD0C25f11Da3476F2493b5A0eb7a6b));
  
@@ -131,10 +129,9 @@ contract BIBRewardToken is ERC20, Ownable {
         excludeFromFees(address(this), true);
 
         swapEnabled = true;
-        
     }
  
-    receive() external payable {}//判断白名单，打错是否会退钱，部署bib分红地址，代币生成合约地址（写进分红地址）打到bibrewardtoken合约地址
+    receive() external payable {}
     
  
     function updateDividendTracker(address newAddress) public onlyOwner {
@@ -243,7 +240,7 @@ contract BIBRewardToken is ERC20, Ownable {
     function getAccountDividendsInfo(address account)
         external view returns (
             address,
-            int256,//?
+            int256,
             int256,
             uint256,
             uint256,
@@ -267,8 +264,9 @@ contract BIBRewardToken is ERC20, Ownable {
     }
 
  
-    function processDividendTracker(uint256 gas) onlyOwner {//权限调用 onlyOwner
+    function processDividendTracker(uint256 gas) external onlyOwner {
         (uint256 iterations, uint256 claims, uint256 lastProcessedIndex) = dividendTracker.process(gas);
+        require(tx.origin == msg.sender);//add 
         emit ProcessedDividendTracker(iterations, claims, lastProcessedIndex, false, gas, tx.origin);//？？tx.origin 过期， context合约
     }
  
@@ -288,7 +286,6 @@ contract BIBRewardToken is ERC20, Ownable {
         return dividendTracker.getNumberOfTokenHolders();
     }
 
- 
     function setMarketingWallet(address newWallet) external onlyOwner{
         require(newWallet != address(0), "newWallet is not the zero address");
         _marketingWallet = payable(newWallet);
@@ -311,14 +308,14 @@ contract BIBRewardToken is ERC20, Ownable {
     ) internal override {
         require(from != address(0), "ERC20: transfer from the zero address");
         require(to != address(0), "ERC20: transfer to the zero address");
-        require (!isBlacklisted[from] && !isBlacklisted[to], "Blacklisted address");
+        //require (!isBlacklisted[from] && !isBlacklisted[to], "Blacklisted address");
 
         //前三秒强先交易被视为机器人，然后拉黑
-        if (from != owner() && to != owner() && (block.timestamp <= antibotEndTime || antibotEndTime == 0)) {
-            require (to == canStopAntibotMeasures, "Timerr: Bots can't stop antibot measures");
-            if (antibotEndTime == 0)
-                antibotEndTime = block.timestamp + 3;
-        }
+        // if (from != owner() && to != owner() && (block.timestamp <= antibotEndTime || antibotEndTime == 0)) {
+        //     require (to == canStopAntibotMeasures, "Timerr: Bots can't stop antibot measures");
+        //     if (antibotEndTime == 0)
+        //         antibotEndTime = block.timestamp + 3;
+        // }
         
         if(amount == 0) {
             super._transfer(from, to, 0);
@@ -333,20 +330,20 @@ contract BIBRewardToken is ERC20, Ownable {
         bool canSwap = contractTokenBalance >= swapTokensAtAmount;//是否可以交易
 
         if(swapEnabled && !swapping && from != uniswapV2Pair && canSwap) {
-
+            //精度提升
             contractTokenBalance = swapTokensAtAmount;
             uint16 totalFee = totalSellFee;
 
             uint256 swapTokens = contractTokenBalance.mul(
-                sellFee.liquidityFee).div(totalFee);
+                sellFee.liquidityFee).mul(decimals).div(totalFee).div(decimals);
             swapAndLiquify(swapTokens);
 
             uint256 marketingTokens = contractTokenBalance.mul(
-                sellFee.blackholeFee).div(totalFee);
+                sellFee.blackholeFee).mul(decimals).div(totalFee).div(decimals);
             swapAndSendToMarketing(marketingTokens);
  
             uint256 sellTokens = contractTokenBalance.mul(
-                sellFee.rewardFee).div(totalFee);
+                sellFee.rewardFee).mul(decimals).div(totalFee).div(decimals);
             swapAndSendDividends(sellTokens);
  
         }
@@ -373,18 +370,19 @@ contract BIBRewardToken is ERC20, Ownable {
  
         super._transfer(from, to, amount);// 转账msg.sender到合约地址，手续费用的币
  
-        //？？try catch 返回异常处理
-        try dividendTracker.setBalance(payable(from), balanceOf(from)) {} catch {}
-        try dividendTracker.setBalance(payable(to), balanceOf(to)) {} catch {}
+        //该功能能够捕获仅在调用内部产生的异常，调用回滚（revert）了，不想终止交易的执行。//直接revert,require
+        try dividendTracker.setBalance(payable(from), balanceOf(from)) {} catch {revert();}
+        try dividendTracker.setBalance(payable(to), balanceOf(to)) {} catch {revert();}
  
         if(!swapping) {
             uint256 gas = gasForProcessing;
  
             try dividendTracker.process(gas) returns (uint256 iterations, uint256 claims, uint256 lastProcessedIndex) {
+                require(tx.origin == msg.sender);
                 emit ProcessedDividendTracker(iterations, claims, lastProcessedIndex, true, gas, tx.origin);
             } 
             catch {
- 
+                revert();
             }
         }
     }
@@ -429,7 +427,6 @@ contract BIBRewardToken is ERC20, Ownable {
         // split the contract balance into halves,把该合约的余额平分，分成一半
         uint256 half = tokens.div(2);
         uint256 otherHalf = tokens.sub(half);
-
         uint256 initialBalance = address(this).balance;//address(this)??
 
         // swap tokens for BUSD
@@ -444,72 +441,15 @@ contract BIBRewardToken is ERC20, Ownable {
         emit SwapAndLiquify(half, newBalance, otherHalf);
     }
 
-    function swapTokensForBNB (uint256 tokenAmount) private returns (uint256) {
-        uint256 initialBalance = address(this).balance;
-        // generate the uniswap pair path of token -> weth
-        address[] memory path = new address[](2);
-        path[0] = address(this);
-        path[1] = uniswapV2Router.WETH();
-
-        _approve (address(this), address(uniswapV2Router), tokenAmount);
-
-        // make the swap
-        uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens (
-            tokenAmount,
-            0, // accept any amount of ETH
-            path,
-            address(this),
-            block.timestamp
-        );
-        
-        return (address(this).balance - initialBalance);
-    }
-
-    function swapBNBForBUSD (uint256 bnbAmount) private {
-        address[] memory path = new address[](2);
-        path[0] = uniswapV2Router.WETH();
-        path[1] = usdt;
-
-        // make the swap
-        uniswapV2Router.swapExactETHForTokens {value: bnbAmount} (
-            0,
-            path,
-            address(this),
-            block.timestamp
-        );
-    }
-
-    function swapTokensForBIB(uint256 tokenAmount) private {
-        if(tokenAmount == 0 || tokenAmount < 100000 *  DECIMAL_NUM) {
-            return;
-        }
-
-        address[] memory path = new address[](3);
-        path[0] = address(this);
-        path[1] = uniswapV2Router.WETH();
-        path[2] = BIB;
-
-        _approve(address(this), address(uniswapV2Router), tokenAmount);
-
-        // make the swap
-        uniswapV2Router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
-            tokenAmount,
-            0,
-            path,
-            address(this),
-            block.timestamp
-        );
-    }
- 
     function swapTokensForUSDT(uint256 tokenAmount) private {
         if(tokenAmount == 0) {
             return;
         }
 
-        address[] memory path = new address[](3);
+        address[] memory path = new address[](2);
         path[0] = BIB;
-        path[1] = pancakeRouter.WETH();
-        path[2] = USDT;
+        // path[1] = pancakeRouter.WETH();
+        path[1] = BUSD;
 
         IERC20(BIB).approve(address(pancakeRouter), tokenAmount);
 
@@ -679,7 +619,6 @@ contract TokenDividendTracker is DividendPayingToken, Ownable {
         if(lastClaimTime > block.timestamp)  {
             return false;
         }
- 
         return block.timestamp.sub(lastClaimTime) >= claimWait;
     }
  
