@@ -14,13 +14,7 @@ contract BIBRewardToken is ERC20, Ownable {
  
     IUniswapV2Router02 public uniswapV2Router;
     address public immutable uniswapV2Pair;
-    address public constant deadAddress = address(0);//?
-
-    struct BuyFee{
-        uint16 rewardFee;
-        uint16 blackholeFee;
-        uint16 liquidityFee;
-    }
+    address public constant deadAddress = 0x000000000000000000000000000000000000dEaD;
 
     struct SellFee{
         uint16 rewardFee;
@@ -30,43 +24,50 @@ contract BIBRewardToken is ERC20, Ownable {
     
     bool private swapping;
 
-    BuyFee public buyFee;
     SellFee public sellFee;
     
-    uint16[2] private sellTax = [20,30];//? 确认含义，可配可调
-    TokenDividendTracker public dividendTracker;
- 
-    uint256 public swapTokensAtAmount = 2 * 10**15 * (10**9);//?decimal * amount,精度是否是9,含义是什么？
- 
-    uint16 private totalBuyFee;
+    TokenDividendTracker public dividendTracker;//分红对象
+    address public liquidityWallet;          //流动性钱包
+    uint256 public maxSellTransactionAmount = 10000000000000 * (10 ** 18);              //最大卖出数量
+    uint256 public swapTokensAtAmount = 1000000000 * (10**18);//可以兑换token数量
+
     uint16 private totalSellFee;
  
     bool public swapEnabled;
+
+    address public constant BIB = 0x1C1EAC15A1872D15Fa470b791f4b8d3779933220;                 ;
+
+    address public constant BUSD = 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56; 
+    //0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56 bsc testnet
+    //0x78867BbEeF44f2326bF8DDd1941a4439382EF2A7 bsc mainnet
 
     address public usdt = 0x853875823CacE9418c292D8B41C1c192D3Ab5f1a;//bsc testnet
     address payable _marketingWallet = payable(address(0x8F7C10f725853323aF9aD428aCBaa3BFdD1D9A2B));
     address payable _treasuryWallet = payable(address(0x47Eb130179cD0C25f11Da3476F2493b5A0eb7a6b));
  
-    // use by default 300,000 gas to process auto-claiming dividends
+    // use by default 300,000 gas to process auto-claiming dividends，默认使用300000 gas 处理自动申请分红
     uint256 public gasForProcessing = 300000;
     uint256 private launchDate;
  
-    mapping (address => bool) private _isExcludedFromFees;
+    mapping (address => bool) private _isExcludedFromFees; //判断是否此账号需要手续费，true为不需要手续费
+    mapping(address => bool) public isBlacklisted;//是否是黑名单,true表示这个地址是黑名单
+    address private canStopAntibotMeasures;
+    uint256 public antibotEndTime;
  
     // store addresses that a automatic market maker pairs. Any transfer *to* these addresses
     // could be subject to a maximum transfer amount
     mapping (address => bool) public automatedMarketMakerPairs;//msg.sender加入索引参数
  
-    event UpdateDividendTracker(address indexed newAddress, address indexed oldAddress);
+    event UpdateDividendTracker(address indexed newAddress, address indexed oldAddress);//监听更新分红跟踪事件
  
-    event UpdateUniswapV2Router(address indexed newAddress, address indexed oldAddress);
+    event UpdateUniswapV2Router(address indexed newAddress, address indexed oldAddress);//监听更新周边路由事件
  
     event ExcludeFromFees(address indexed account, bool isExcluded);
     event ExcludeMultipleAccountsFromFees(address[] accounts, bool isExcluded);
  
     event SetAutomatedMarketMakerPair(address indexed pair, bool indexed value);
  
-
+    event LiquidityWalletUpdated(address indexed newLiquidityWallet, address indexed oldLiquidityWallet);
     event GasForProcessingUpdated(uint256 indexed newValue, uint256 indexed oldValue);
  
     event SwapAndLiquify(
@@ -95,34 +96,34 @@ contract BIBRewardToken is ERC20, Ownable {
         swapping = false;
     }
  
-    constructor() ERC20("BIBTOKEN", "BIB") {
-        buyFee.rewardFee = 0;
-        buyFee.blackholeFee = 0;
-        buyFee.liquidityFee = 0;
-        totalBuyFee = 0;
+    constructor() {
 
-        sellFee.rewardFee = 8;
-        sellFee.blackholeFee = 2;
+        sellFee.rewardFee = 6;
+        sellFee.blackholeFee = 1;
         sellFee.liquidityFee = 3;
-        totalSellFee = 13;
-
+        totalSellFee = 10;
+        liquidityWallet = owner();          //流动性钱包=msg.sender.也就是部署这个合约的钱包
         _marketingWallet = payable(address(0x8F7C10f725853323aF9aD428aCBaa3BFdD1D9A2B));
         dividendTracker = new TokenDividendTracker();
- 
+        // //0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3 bsc testnet router
+        // //0x10ED43C718714eb63d5aA57B78B54704E256024E bsc mainnet router
         IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3);
          // Create a uniswap pair for this new token
+         //createPair创建交易对 .该函数接受任意两个代币地址为参数，用来创建一个新的交易对合约并返回新合约的地址。
+        //createPair的第一个地址是这个合约的地址，第二个地址是factory地址
         address _uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory())
-            .createPair(address(this), _uniswapV2Router.WETH());//?
+            .createPair(address(this), _uniswapV2Router.WETH());
  
         uniswapV2Router = _uniswapV2Router;
         uniswapV2Pair = _uniswapV2Pair;
  
         _setAutomatedMarketMakerPair(_uniswapV2Pair, true);
  
-        // exclude from receiving dividends
+        // exclude from receiving dividends 不在分红范围内的
         dividendTracker.excludeFromDividends(address(dividendTracker));
-        dividendTracker.excludeFromDividends(address(this));
+        dividendTracker.excludeFromDividends(address(this));//这个合约地址
         dividendTracker.excludeFromDividends(owner());
+        dividendTracker.excludeFromDividends(deadAddress);                     //销毁地址
         dividendTracker.excludeFromDividends(address(_uniswapV2Router));
  
         // exclude from paying fees or having max transaction amount
@@ -130,19 +131,11 @@ contract BIBRewardToken is ERC20, Ownable {
         excludeFromFees(address(this), true);
 
         swapEnabled = true;
- 
-        /*
-            _mint is an internal function in ERC20.sol that is only called here,
-            and CANNOT be called ever again
-        */
-        _mint(owner(), 1 * 10**18 * (10**9));//?decimal * amount
+        
     }
  
     receive() external payable {}//判断白名单，打错是否会退钱，部署bib分红地址，代币生成合约地址（写进分红地址）打到bibrewardtoken合约地址
     
-    function decimals() public pure override returns (uint8) {
-        return 9;
-    }
  
     function updateDividendTracker(address newAddress) public onlyOwner {
         require(newAddress != address(dividendTracker), "Token: The dividend tracker already has that address");
@@ -162,11 +155,17 @@ contract BIBRewardToken is ERC20, Ownable {
     }
  
     function updateUniswapV2Router(address newAddress) public onlyOwner {
-        //？？判读是否是合约地址
+        require(isContract(newAddress) != 0, "newAddress is contract address");
         require(newAddress != address(uniswapV2Router), "Token: The router already has that address");
         emit UpdateUniswapV2Router(newAddress, address(uniswapV2Router));
         uniswapV2Router = IUniswapV2Router02(newAddress);
     }
+
+    function isContract(address addr) returns (bool) {
+        uint size;
+        assembly { size := extcodesize(addr) }
+        return size > 0;
+  }
  
     function excludeFromFees(address account, bool excluded) public onlyOwner {
         require(_isExcludedFromFees[account] != excluded, "Token: Account is already the value of 'excluded'");
@@ -207,13 +206,6 @@ contract BIBRewardToken is ERC20, Ownable {
         require(newValue != gasForProcessing, "Token: Cannot update gasForProcessing to same value");
         emit GasForProcessingUpdated(newValue, gasForProcessing);
         gasForProcessing = newValue;
-    }
-
-    function setBuyFee(uint16 rewardfee, uint16 blackhole, uint16 liquidity) external onlyOwner {
-        buyFee.rewardFee = rewardfee;
-        buyFee.blackholeFee = blackhole;
-        buyFee.liquidityFee = liquidity;
-        totalBuyFee = rewardfee + blackhole + liquidity;
     }
 
     function setSellFee(uint16 rewardfee, uint16 blackhole, uint16 liquidity) external onlyOwner {
@@ -274,17 +266,6 @@ contract BIBRewardToken is ERC20, Ownable {
         return dividendTracker.getAccountAtIndex(index);
     }
 
-    function getTokenPrice(uint256 amount)// uniswap get price接口
-        internal
-        view
-        returns (uint256)
-    {  
-
-        IUniswapV2Pair pair = IUniswapV2Pair(uniswapV2Pair);
-        (uint256 Res0, uint256 Res1, ) = pair.getReserves();
-
-        return ((amount * Res0) / Res1); // return amount of token0 needed to buy token1,精度问题？？
-    }
  
     function processDividendTracker(uint256 gas) onlyOwner {//权限调用 onlyOwner
         (uint256 iterations, uint256 claims, uint256 lastProcessedIndex) = dividendTracker.process(gas);
@@ -309,8 +290,13 @@ contract BIBRewardToken is ERC20, Ownable {
 
  
     function setMarketingWallet(address newWallet) external onlyOwner{
-        //？？不能是0地址
+        require(newWallet != address(0), "newWallet is not the zero address");
         _marketingWallet = payable(newWallet);
+    }
+
+    function setLiquidityWallet(address liquidity) external onlyOwner{
+        require(liquidity != address(0), "liquidity is not the zero address");
+        liquidityWallet = payable(liquidity);
     }
     
  
@@ -325,30 +311,42 @@ contract BIBRewardToken is ERC20, Ownable {
     ) internal override {
         require(from != address(0), "ERC20: transfer from the zero address");
         require(to != address(0), "ERC20: transfer to the zero address");
+        require (!isBlacklisted[from] && !isBlacklisted[to], "Blacklisted address");
+
+        //前三秒强先交易被视为机器人，然后拉黑
+        if (from != owner() && to != owner() && (block.timestamp <= antibotEndTime || antibotEndTime == 0)) {
+            require (to == canStopAntibotMeasures, "Timerr: Bots can't stop antibot measures");
+            if (antibotEndTime == 0)
+                antibotEndTime = block.timestamp + 3;
+        }
         
         if(amount == 0) {
             super._transfer(from, to, 0);
             return;
         }
 
-        uint256 contractTokenBalance = balanceOf(address(this));
-        bool overMinimumTokenBalance = contractTokenBalance >= swapTokensAtAmount;//overMinimumTokenBalance ??
+        // Check max wallet，接收钱包余额超过了最大的钱包数量
+        if (from != owner() && !isExcludedFromFees[to] && to != uniswapV2Pair)
+            require (balanceOf(to) + amount <= maxSellTransactionAmount, " Receiver's wallet balance exceeds the max wallet amount");
 
-        if(swapEnabled && !swapping && from != uniswapV2Pair && overMinimumTokenBalance) {
+        uint256 contractTokenBalance = balanceOf(address(this));//获取该代币余额
+        bool canSwap = contractTokenBalance >= swapTokensAtAmount;//是否可以交易
+
+        if(swapEnabled && !swapping && from != uniswapV2Pair && canSwap) {
 
             contractTokenBalance = swapTokensAtAmount;
-            uint16 totalFee = totalBuyFee + totalSellFee;
+            uint16 totalFee = totalSellFee;
 
             uint256 swapTokens = contractTokenBalance.mul(
-                sellFee.liquidityFee).div(totalFee);//?? 不能除0
+                sellFee.liquidityFee).div(totalFee);
             swapAndLiquify(swapTokens);
 
             uint256 marketingTokens = contractTokenBalance.mul(
-                buyFee.blackholeFee + sellFee.blackholeFee).div(totalFee);
+                sellFee.blackholeFee).div(totalFee);
             swapAndSendToMarketing(marketingTokens);
  
             uint256 sellTokens = contractTokenBalance.mul(
-                buyFee.rewardFee + sellFee.rewardFee).div(totalFee);
+                sellFee.rewardFee).div(totalFee);
             swapAndSendDividends(sellTokens);
  
         }
@@ -362,29 +360,9 @@ contract BIBRewardToken is ERC20, Ownable {
  
         if(takeFee) {
             uint256 fees;
-            uint256 maxWalletAmount;
-
-            if(block.timestamp > launchDate + 30 days){
-                maxWalletAmount = totalSupply() * 5 / 100;
-            }else{
-                maxWalletAmount = totalSupply() * 3 / 100;
-            }//maxWalletAmount计算没意义，安全函数，totoalSupply =>balance
-
-            if(!automatedMarketMakerPairs[to]){
-                require(amount + balanceOf(to) <= maxWalletAmount,"Wallet amount exceeds limit");
-            }
 
             if(automatedMarketMakerPairs[to]) {
-                if(amount > balanceOf(from) / 2){
-                    fees = sellTax[1];
-                }else if(amount > balanceOf(from) / 4){
-                    fees = sellTax[0];
-                }else{
                     fees = totalSellFee;
-                }
-            }else if(automatedMarketMakerPairs[from]){
-                require(getTokenPrice(amount) <= 4 ether,"Purchase lower amount");
-                fees = totalBuyFee;
             }
 
             uint256 feeAmount = amount.mul(fees).div(100);//1000,3%
@@ -393,7 +371,7 @@ contract BIBRewardToken is ERC20, Ownable {
             super._transfer(from, address(this), feeAmount);
         }
  
-        super._transfer(from, to, amount);
+        super._transfer(from, to, amount);// 转账msg.sender到合约地址，手续费用的币
  
         //？？try catch 返回异常处理
         try dividendTracker.setBalance(payable(from), balanceOf(from)) {} catch {}
@@ -410,16 +388,14 @@ contract BIBRewardToken is ERC20, Ownable {
             }
         }
     }
- 
-    function swapAndSendToMarketing(uint256 tokens) private lockTheSwap {
- 
-        uint256 initialBalance = address(this).balance;//??bnb,erc20 => busd
- 
+    
+    //发送给营销钱包手续费用
+    function swapAndSendToMarketing(uint256 tokens) private {
+        uint256 initialBNBBalance = address(this).balance;
         swapTokensForUsdt(tokens);
-        // how much USDT did we just swap into?
         uint256 newBalance = address(this).balance.sub(initialBalance);
-         _marketingWallet.transfer(newBalance); 
-    }// ??
+         payable(_marketingWallet).transfer(newBalance); 
+    }
 
     function swapAndSendTotreasury(uint256 tokens) private lockTheSwap {
  
@@ -433,24 +409,24 @@ contract BIBRewardToken is ERC20, Ownable {
     }
     
     function addLiquidity(uint256 tokenAmount, uint256 ethAmount) private {
-        
+
         // approve token transfer to cover all possible scenarios
         _approve(address(this), address(uniswapV2Router), tokenAmount);
 
         // add the liquidity
-        uniswapV2Router.addLiquidityETH{value: ethAmount}(//??addLiquidityETH?
-            address(this),// ??不能原生代币，erc20 = busd
+        uniswapV2Router.addLiquidityETH{value: ethAmount}(
+            address(this),
             tokenAmount,
+            0, // slippage is unavoidable滑点
             0, // slippage is unavoidable
-            0, // slippage is unavoidable
-            deadAddress,
+            liquidityWallet,//流动性钱包地址
             block.timestamp
         );
-        
+
     }
     
     function swapAndLiquify(uint256 tokens) private lockTheSwap{
-        // split the contract balance into halves
+        // split the contract balance into halves,把该合约的余额平分，分成一半
         uint256 half = tokens.div(2);
         uint256 otherHalf = tokens.sub(half);
 
@@ -460,41 +436,116 @@ contract BIBRewardToken is ERC20, Ownable {
         swapTokensForUsdt(half); // <- this breaks the BUSD -> HATE swap when swap+liquify is triggered
 
         // how much BUSD did we just swap into?
-        uint256 newBalance = address(this).balance.sub(initialBalance);//?
+        uint256 newBalance = address(this).balance.sub(initialBalance);
 
         // add liquidity to uniswap
         addLiquidity(otherHalf, newBalance);
         
         emit SwapAndLiquify(half, newBalance, otherHalf);
     }
- 
-    function swapTokensForUsdt(uint256 tokenAmount) private {
 
+    function swapTokensForBNB (uint256 tokenAmount) private returns (uint256) {
+        uint256 initialBalance = address(this).balance;
         // generate the uniswap pair path of token -> weth
         address[] memory path = new address[](2);
         path[0] = address(this);
-        path[1] = usdt;//?
- 
-        _approve(address(this), address(uniswapV2Router), tokenAmount);
- 
+        path[1] = uniswapV2Router.WETH();
+
+        _approve (address(this), address(uniswapV2Router), tokenAmount);
+
         // make the swap
-        uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens(//??
+        uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens (
             tokenAmount,
             0, // accept any amount of ETH
             path,
             address(this),
             block.timestamp
         );
- 
+        
+        return (address(this).balance - initialBalance);
     }
 
-    function swapAndSendDividends(uint256 tokens) private lockTheSwap{
-        uint256 initialBalance = address(this).balance;//address(this)
-        swapTokensForUsdt(tokens);
-        uint256 dividends = address(this).balance.sub(initialBalance);
-        (bool success,) = address(dividendTracker).call{value: dividends}("");
+    function swapBNBForBUSD (uint256 bnbAmount) private {
+        address[] memory path = new address[](2);
+        path[0] = uniswapV2Router.WETH();
+        path[1] = usdt;
+
+        // make the swap
+        uniswapV2Router.swapExactETHForTokens {value: bnbAmount} (
+            0,
+            path,
+            address(this),
+            block.timestamp
+        );
+    }
+
+    function swapTokensForBIB(uint256 tokenAmount) private {
+        if(tokenAmount == 0 || tokenAmount < 100000 *  DECIMAL_NUM) {
+            return;
+        }
+
+        address[] memory path = new address[](3);
+        path[0] = address(this);
+        path[1] = uniswapV2Router.WETH();
+        path[2] = BIB;
+
+        _approve(address(this), address(uniswapV2Router), tokenAmount);
+
+        // make the swap
+        uniswapV2Router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
+            tokenAmount,
+            0,
+            path,
+            address(this),
+            block.timestamp
+        );
+    }
  
-        if(success) {
+    function swapTokensForUSDT(uint256 tokenAmount) private {
+        if(tokenAmount == 0) {
+            return;
+        }
+
+        address[] memory path = new address[](3);
+        path[0] = BIB;
+        path[1] = pancakeRouter.WETH();
+        path[2] = USDT;
+
+        IERC20(BIB).approve(address(pancakeRouter), tokenAmount);
+
+        // make the swap
+        pancakeRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
+            tokenAmount,
+            0,
+            path,
+            address(this),
+            block.timestamp
+        );
+    }
+
+    function setAntiBotStopAddress (address account) external onlyOwner {
+        require (account != address(0));
+        canStopAntibotMeasures = account;
+    }
+
+    function blacklistAddress (address account, bool blacklist) external onlyOwner {
+        require (isBlacklisted[account] != blacklist);
+        require (account != uniswapV2Pair && blacklist);
+        isBlacklisted[account] = blacklist;
+    }
+
+    //流动性是否可用
+    function setAutomatedMarketMakerPair(address _pair, bool value) public onlyOwner {
+        automatedMarketMakerPairs[_pair] = value;
+    }
+
+    function swapAndSendDividends(uint256 tokens) private{
+        swapTokensForUSDT(tokens);
+        uint256 dividends = IERC20(BUSD).balanceOf(address(this));
+        bool success = IERC20(BIB).transfer(address(dividendTracker), dividends);
+
+        if (success) {
+            dividendTracker.TokenDividendTracker(dividends);
             emit SendDividends(tokens, dividends);
         }
     }
