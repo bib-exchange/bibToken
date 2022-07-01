@@ -19,11 +19,11 @@ async function main() {
 //    libObj = await libFactory.deploy()
 
   // We get the contract to deploy
-  const BIBToken = await hre.ethers.getContractFactory("BNBRewardToken");
+  const BIBToken = await hre.ethers.getContractFactory("BIBRewardToken");
   const bibToken = await BIBToken.deploy();
 
   await bibToken.deployed();
-  console.log("BIBToken deployed to:", bibToken.address);
+  console.log("BIBRewardToken deployed to:", bibToken.address);
   
 
 //   const admin = await upgrades.admin.getInstance();

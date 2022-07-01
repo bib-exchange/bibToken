@@ -46,7 +46,7 @@ module.exports = {
     runOnCompile: true,
     flat: true,
     only: [
-      
+      'BIBRewardToken'
     ],
   },
 };

@@ -9,6 +9,7 @@
     "lint": "hardhat check",
     "compile": "hardhat compile",
     "deploy": "hardhat run deploy/deploy_bibtoken.js --network bsc_test",
+    "verify": "npx hardhat verify --network bsc_test 0x5a626762A1BF23Be671897dB42F41b16B0012841",
     "test:erc721": "hardhat test ./test/TestRP_erc721.js",
     "test:normal": "hardhat test ./test/TestRedPacket.js",
     "prettier:solidity": "prettier --write contracts/**/*.sol",
@@ -17,7 +18,8 @@
   "dependencies": {
     "@nomiclabs/hardhat-solhint": "^2.0.0",
     "@openzeppelin/contracts": "^4.0.0",
-    "@openzeppelin/contracts-upgradeable": "^4.5.2"
+    "@openzeppelin/contracts-upgradeable": "^4.5.2",
+    "@uniswap/v2-periphery": "^1.1.0-beta.0"
   },
   "devDependencies": {
     "@nomiclabs/buidler": "^1.4.8",
