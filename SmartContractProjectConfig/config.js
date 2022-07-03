@@ -221,7 +221,7 @@ const EtherscanConfig = {
 };
 
 const HardhatOvmConfig = {
-  solcVersion: '0.8.0',
+  solcVersion: '0.8.7',
 };
 
 const HardhatGasReporterConfig = {
