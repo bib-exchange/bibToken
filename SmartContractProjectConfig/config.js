@@ -258,6 +258,8 @@ const ChainlinkVRFConfig = {
   },
 };
 
+export const getContractAddress = (): Record<string, ContractAddresses> => require("./helper_scripts/contractAddress.json");
+
 const ContractAddressConfig = {
   mainnet: {
     MaskTokenAddress: '0x69af81e73a73b40adf4f3d4223cd9b1ece623074',

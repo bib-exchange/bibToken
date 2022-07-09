@@ -16,7 +16,8 @@ contract BIBRewardToken is Ownable, ERC20 {
     IUniswapV2Router02 public uniswapV2Router;
     address public uniswapV2Pair;
     address public constant deadAddress = 0x000000000000000000000000000000000000dEaD;
-    address public immutable BUSD = address(0x78867BbEeF44f2326bF8DDd1941a4439382EF2A7); //BUSD
+    address public immutable BUSD;
+    address public immutable Routner;
     //0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56 bsc testnet
     //0x78867BbEeF44f2326bF8DDd1941a4439382EF2A7 bsc mainnet
 
@@ -91,7 +92,7 @@ contract BIBRewardToken is Ownable, ERC20 {
     }
  
     constructor() ERC20("BIBToken", "BIB") {
-         _mint(msg.sender, 100000000000 * 10 ** decimals());
+         _mint(msg.sender, 35000000000 * 10 ** decimals());
         sellFee.rewardFee = 6;
         sellFee.blackholeFee = 1;
         sellFee.liquidityFee = 3;
@@ -100,7 +101,7 @@ contract BIBRewardToken is Ownable, ERC20 {
         dividendTracker = new TokenDividendTracker();
         // //0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3 bsc testnet router
         // //0x10ED43C718714eb63d5aA57B78B54704E256024E bsc mainnet router
-        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3);
+        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(Routner);
          // Create a uniswap pair for this new token
          //createPair创建交易对 .该函数接受任意两个代币地址为参数，用来创建一个新的交易对合约并返回新合约的地址。
         //createPair的第一个地址是这个合约的地址，第二个地址是factory地址
@@ -197,7 +198,6 @@ contract BIBRewardToken is Ownable, ERC20 {
  
 
     function updateGasForProcessing(uint256 newValue) public onlyOwner {
-        require(newValue >= 200000 && newValue <= 500000, "Token: gasForProcessing must be between 200,000 and 500,000");//gas 费具体newValue
         require(newValue != gasForProcessing, "Token: Cannot update gasForProcessing to same value");
         emit GasForProcessingUpdated(newValue, gasForProcessing);
         gasForProcessing = newValue;
