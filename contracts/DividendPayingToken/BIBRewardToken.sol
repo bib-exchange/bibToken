@@ -8,18 +8,23 @@ import '@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol';
 import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol';
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-
-contract BIBRewardToken is Ownable, ERC20 {
+contract BIBRewardToken is Initializable, ERC20Upgradeable, PausableUpgradeable, OwnableUpgradeable {
     using SafeMath for uint256;
  
     IUniswapV2Router02 public uniswapV2Router;
     address public uniswapV2Pair;
     address public constant deadAddress = 0x000000000000000000000000000000000000dEaD;
-    address public immutable BUSD;
-    address public immutable Routner;
+    address public BUSD; //BUSD
+    address public Router;
     //0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56 bsc testnet
-    //0x78867BbEeF44f2326bF8DDd1941a4439382EF2A7 bsc mainnet
+    //address(0x78867BbEeF44f2326bF8DDd1941a4439382EF2A7) bsc mainnet
+    // //0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3 bsc testnet router
+        // //0x10ED43C718714eb63d5aA57B78B54704E256024E bsc mainnet router
 
     struct SellFee{
         uint16 rewardFee;
@@ -33,12 +38,26 @@ contract BIBRewardToken is Ownable, ERC20 {
     
     TokenDividendTracker public dividendTracker;//分红对象
     address public liquidityWallet;          //流动性钱包
+    address public tokenOwner;
+    address public devAddr;
+    address public ecologyAddr;
+    address public privateSaleAddr;
+    address public idoieoAddr;
+    address public marketingAddr;
+    address public nftminingAddr; 
+    address public businessAddr;
+
     uint256 public maxSellTransactionAmount = 10000000000000 * (10 ** 18);              //最大卖出数量
     uint256 public swapTokensAtAmount = 1000000000 * (10**18);//可以兑换token数量
 
     uint16 private totalSellFee;
  
     bool public swapEnabled;
+
+     uint public decimalVal = 1e18;
+    uint256 public tokenAmount = 100000000000;
+
+    uint256 initialSupply = decimalVal * tokenAmount;
  
     // use by default 300,000 gas to process auto-claiming dividends，默认使用300000 gas 处理自动申请分红
     uint256 public gasForProcessing = 300000;
@@ -90,18 +109,60 @@ contract BIBRewardToken is Ownable, ERC20 {
         _;
         swapping = false;
     }
- 
-    constructor() ERC20("BIBToken", "BIB") {
-         _mint(msg.sender, 35000000000 * 10 ** decimals());
+
+    function initialize() initializer public {
+    tokenOwner = msg.sender;
+    __ERC20_init("BIBToken", "BIB");
+    _mint(tokenOwner, initialSupply);
+    __Pausable_init();
+    __Ownable_init();
+}
+
+function pause() public onlyOwner {
+    _pause();
+}
+
+function unpause() public onlyOwner {
+    _unpause();
+}
+
+    function initAddress(
+        address _devAddr,
+        address _ecologyAddr,
+        address _privateSaleAddr,
+        address _idoieoAddr,
+        address _liquidityWallet,
+        address _marketingAddr,
+        address _nftminingAddr,
+        address _businessAddr) public onlyOwner {
+        require(_devAddr != address(0), "_dev is not the zero address");
+        require(_ecologyAddr != address(0), "_ecology is not the zero address");
+        require(_privateSaleAddr != address(0), "_privateSale is not the zero address");
+        require(_idoieoAddr != address(0), "_idoieoAddr is not the zero address");
+        require(_liquidityWallet != address(0), "_liquidity is not the zero address");
+        require(_marketingAddr != address(0), "_marketing is not the zero address");
+        require(_nftminingAddr != address(0), "_nftmining is not the zero address");
+        require(_businessAddr != address(0), "_business is not the zero address");
+
+        devAddr = _devAddr;
+        ecologyAddr = _ecologyAddr;
+        privateSaleAddr = _privateSaleAddr;
+        idoieoAddr = _idoieoAddr;
+        liquidityWallet = _liquidityWallet;
+        marketingAddr = _marketingAddr;
+        nftminingAddr = _nftminingAddr;
+        businessAddr = _businessAddr;
+}
+
+    constructor() {
+
         sellFee.rewardFee = 6;
         sellFee.blackholeFee = 1;
         sellFee.liquidityFee = 3;
         totalSellFee = 10;
-        liquidityWallet = owner();          //流动性钱包=msg.sender.也就是部署这个合约的钱包
+
         dividendTracker = new TokenDividendTracker();
-        // //0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3 bsc testnet router
-        // //0x10ED43C718714eb63d5aA57B78B54704E256024E bsc mainnet router
-        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(Routner);
+        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(Router);
          // Create a uniswap pair for this new token
          //createPair创建交易对 .该函数接受任意两个代币地址为参数，用来创建一个新的交易对合约并返回新合约的地址。
         //createPair的第一个地址是这个合约的地址，第二个地址是factory地址
@@ -118,7 +179,14 @@ contract BIBRewardToken is Ownable, ERC20 {
         dividendTracker.excludeFromDividends(address(this));//这个合约地址
         dividendTracker.excludeFromDividends(owner());
         dividendTracker.excludeFromDividends(deadAddress);                     //销毁地址
-        dividendTracker.excludeFromDividends(address(_uniswapV2Router));
+        dividendTracker.excludeFromDividends(address(devAddr));
+        dividendTracker.excludeFromDividends(address(ecologyAddr));
+        dividendTracker.excludeFromDividends(address(privateSaleAddr));
+        dividendTracker.excludeFromDividends(address(idoieoAddr));
+        dividendTracker.excludeFromDividends(address(liquidityWallet));
+        dividendTracker.excludeFromDividends(address(marketingAddr));
+        dividendTracker.excludeFromDividends(address(nftminingAddr));
+        dividendTracker.excludeFromDividends(address(businessAddr));
  
         // exclude from paying fees or having max transaction amount
         excludeFromFees(owner(), true);
@@ -128,6 +196,19 @@ contract BIBRewardToken is Ownable, ERC20 {
     }
  
     receive() external payable {}
+
+    function release() public onlyOwner {
+
+    transfer(devAddr,(initialSupply.mul(15).div(100))); // Send 15% of tokens to dev wallet 10,000,000,000 bibtoken
+    transfer(ecologyAddr,(initialSupply.mul(23).div(100))); // Send 23% of tokens to ecology wallet 10,000,000,000 bibtoken
+    transfer(privateSaleAddr,(initialSupply.mul(15).div(100)));
+    transfer(idoieoAddr,(initialSupply.mul(5).div(100)));// Send 15% of tokens to foundation wallet 15,000,000,00 bibtoken
+    transfer(liquidityWallet,(initialSupply.mul(3).div(100))); // Send 5% of tokens to ido wallet 5,000,000,000 bibtoken
+    transfer(marketingAddr,(initialSupply.mul(8).div(100)));// Send 3% of tokens to tournaments wallet 35,000,000,000 bibtoken
+    transfer(nftminingAddr,(initialSupply.mul(16).div(100)));
+    transfer(businessAddr,(initialSupply.mul(15).div(100)));// Send 16% of tokens to nftmining wallet 4,000,000,000 bibtoken
+
+}
     
  
     function updateDividendTracker(address newAddress) public onlyOwner {
@@ -198,6 +279,7 @@ contract BIBRewardToken is Ownable, ERC20 {
  
 
     function updateGasForProcessing(uint256 newValue) public onlyOwner {
+        require(newValue >= 200000 && newValue <= 500000, "Token: gasForProcessing must be between 200,000 and 500,000");//gas 费具体newValue
         require(newValue != gasForProcessing, "Token: Cannot update gasForProcessing to same value");
         emit GasForProcessingUpdated(newValue, gasForProcessing);
         gasForProcessing = newValue;
@@ -287,6 +369,39 @@ contract BIBRewardToken is Ownable, ERC20 {
     function setLiquidityWallet(address liquidity) external onlyOwner{
         require(liquidity != address(0), "liquidity is not the zero address");
         liquidityWallet = payable(liquidity);
+    }
+
+    function setDevAddress(address dev) public onlyOwner {
+     require(dev != address(0), "_dev is not the zero address");
+         devAddr = dev;
+    }
+    function setEcologyAddress(address ecology) public onlyOwner {
+        require(ecology != address(0), "ecology is not the zero address");
+         ecologyAddr = ecology;
+    }
+    function setPrivateSaleAddress(address privateSale) public onlyOwner {
+         require(privateSale != address(0), "privateSale is not the zero address");
+         privateSaleAddr = privateSale;
+    }
+
+    function setIdoAddress(address idoieo) public onlyOwner {
+        require(idoieo != address(0), "idoieo is not the zero address");
+        idoieoAddr = idoieo;
+    }
+
+    function setMarketingAddress(address marketing) public onlyOwner {
+        require(marketing != address(0), "marketing is not the zero address");
+        marketingAddr = marketing;
+    }
+
+    function setNftReserveAddress(address nftmining) public onlyOwner {
+        require(nftmining != address(0), "nftmining is not the zero address");
+        nftminingAddr = nftmining;
+    }
+
+    function setBusinessAddress(address business) public onlyOwner {
+        require(business != address(0), "business is not the zero address");
+        businessAddr = business;
     }
     
  
@@ -457,6 +572,10 @@ contract BIBRewardToken is Ownable, ERC20 {
         require (isBlacklisted[account] != blacklist);
         require (account != uniswapV2Pair && blacklist);
         isBlacklisted[account] = blacklist;
+    }
+
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal whenNotPaused override {
+    super._beforeTokenTransfer(from, to, amount);
     }
 
 
