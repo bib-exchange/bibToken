@@ -47,7 +47,7 @@ contract BIBRewardToken is Initializable, ERC20Upgradeable, PausableUpgradeable,
     address public nftminingAddr; 
     address public businessAddr;
 
-    uint256 public maxSellTransactionAmount = 10000000000000 * (10 ** 18);              //最大卖出数量
+    uint256 public maxSellTransactionAmount = 10000000000000 * (10 ** 18);              //最大卖出数量 1e 
     uint256 public swapTokensAtAmount = 1000000000 * (10**18);//可以兑换token数量
 
     uint16 private totalSellFee;
@@ -279,7 +279,6 @@ function unpause() public onlyOwner {
  
 
     function updateGasForProcessing(uint256 newValue) public onlyOwner {
-        require(newValue >= 200000 && newValue <= 500000, "Token: gasForProcessing must be between 200,000 and 500,000");//gas 费具体newValue
         require(newValue != gasForProcessing, "Token: Cannot update gasForProcessing to same value");
         emit GasForProcessingUpdated(newValue, gasForProcessing);
         gasForProcessing = newValue;
@@ -460,9 +459,9 @@ function unpause() public onlyOwner {
         }
  
         if(takeFee) {
-        	uint256 fees = amount.mul(totalSellFee).div(100);
+        	uint256 fees = amount.mul(totalSellFee).mul(decimals()).div(100).div(decimals());
         	if(automatedMarketMakerPairs[to]){
-        	    fees += amount.mul(1).div(100);
+        	    fees += amount.mul(1).mul(decimals()).div(100).div(decimals());
         	}
         	amount = amount.sub(fees);
 
@@ -507,7 +506,7 @@ function unpause() public onlyOwner {
     
     function swapAndLiquify(uint256 tokens) private lockTheSwap{
         // split the contract balance into halves,把该合约的余额平分，分成一半
-        uint256 half = tokens.div(2);
+        uint256 half = tokens.mul(decimals()).div(2).div(decimals());
         uint256 otherHalf = tokens.sub(half);
         uint256 initialBalance = address(this).balance;//address(this)??
 
@@ -612,8 +611,8 @@ contract TokenDividendTracker is Ownable, DividendPayingToken {
     event Claim(address indexed account, uint256 amount, bool indexed automatic);
  
     constructor() DividendPayingToken("Token_Dividend_Tracker", "Token_Dividend_Tracker") {
-        claimWait = 3600;
-        minimumTokenBalanceForDividends = 10000 * (10**9); //must hold 10000 tokens
+        claimWait = 1 hours;
+        minimumTokenBalanceForDividends = 1e5 * (10**9); //must hold 10000 tokens
     }
  
     function _transfer(address, address, uint256) internal pure override {
@@ -707,7 +706,7 @@ contract TokenDividendTracker is Ownable, DividendPayingToken {
             uint256,
             uint256) {
         if(index >= tokenHoldersMap.size()) {
-            return (0x0000000000000000000000000000000000000000, -1, -1, 0, 0, 0, 0, 0);
+            return (address(0), -1, -1, 0, 0, 0, 0, 0);
         }
  
         address account = tokenHoldersMap.getKeyAtIndex(index);
