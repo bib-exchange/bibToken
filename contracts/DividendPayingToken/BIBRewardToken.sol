@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-// import "./IterableMapping.sol";
+import "./IterableMapping.sol";
 import "./DividendPayingToken.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -8,70 +8,6 @@ import '@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol';
 import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol';
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-// import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-// import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-// import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-// import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-
-library IterableMapping {
-    // Iterable mapping from address to uint;
-    struct Map {
-        address[] keys;
-        mapping(address => uint) values;
-        mapping(address => uint) indexOf;
-        mapping(address => bool) inserted;
-    }
-
-    function get(Map storage map, address key) public view returns (uint) {
-        return map.values[key];
-    }
-
-    function getIndexOfKey(Map storage map, address key) public view returns (int) {
-        if (!map.inserted[key]) {
-            return - 1;
-        }
-        return int(map.indexOf[key]);
-    }
-
-    function getKeyAtIndex(Map storage map, uint index) public view returns (address) {
-        return map.keys[index];
-    }
-
-
-    function size(Map storage map) public view returns (uint) {
-        return map.keys.length;
-    }
-
-    function set(Map storage map, address key, uint val) public {
-        if (map.inserted[key]) {
-            map.values[key] = val;
-        } else {
-            map.inserted[key] = true;
-            map.values[key] = val;
-            map.indexOf[key] = map.keys.length;
-            map.keys.push(key);
-        }
-    }
-
-    function remove(Map storage map, address key) public {
-        if (!map.inserted[key]) {
-            return;
-        }
-
-        delete map.inserted[key];
-        delete map.values[key];
-
-        uint index = map.indexOf[key];
-        uint lastIndex = map.keys.length - 1;
-        address lastKey = map.keys[lastIndex];
-
-        map.indexOf[lastKey] = index;
-        delete map.indexOf[key];
-
-        map.keys[index] = lastKey;
-        map.keys.pop();
-    }
-}
 
 
 contract BIBRewardToken is Ownable, ERC20 {
@@ -102,10 +38,6 @@ contract BIBRewardToken is Ownable, ERC20 {
     uint16 private totalSellFee;
  
     bool public swapEnabled;
-
-    
-    address payable _marketingWallet = payable(address(0x8F7C10f725853323aF9aD428aCBaa3BFdD1D9A2B));
-    address payable _treasuryWallet = payable(address(0x47Eb130179cD0C25f11Da3476F2493b5A0eb7a6b));
  
     // use by default 300,000 gas to process auto-claiming dividends，默认使用300000 gas 处理自动申请分红
     uint256 public gasForProcessing = 300000;
@@ -157,32 +89,14 @@ contract BIBRewardToken is Ownable, ERC20 {
         _;
         swapping = false;
     }
-
-//     function initialize() initializer public {
-//     __Pausable_init();
-//     _mint(msg.sender, 100000000000 * 10 ** decimals());
-// }
-
-// function pause() public onlyOwner {
-//     _pause();
-// }
-
-// function unpause() public onlyOwner {
-//     _unpause();
-// }
-
-// function _beforeTokenTransfer(address from, address to, uint256 amount) internal whenNotPaused override {
-//     super._beforeTokenTransfer(from, to, amount);
-//     }
  
     constructor() ERC20("BIBToken", "BIB") {
-
+         _mint(msg.sender, 100000000000 * 10 ** decimals());
         sellFee.rewardFee = 6;
         sellFee.blackholeFee = 1;
         sellFee.liquidityFee = 3;
         totalSellFee = 10;
         liquidityWallet = owner();          //流动性钱包=msg.sender.也就是部署这个合约的钱包
-        _marketingWallet = payable(address(0x8F7C10f725853323aF9aD428aCBaa3BFdD1D9A2B));
         dividendTracker = new TokenDividendTracker();
         // //0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3 bsc testnet router
         // //0x10ED43C718714eb63d5aA57B78B54704E256024E bsc mainnet router
@@ -207,7 +121,6 @@ contract BIBRewardToken is Ownable, ERC20 {
  
         // exclude from paying fees or having max transaction amount
         excludeFromFees(owner(), true);
-        excludeFromFees(_marketingWallet, true);
         excludeFromFees(address(this), true);
 
         swapEnabled = true;
@@ -352,7 +265,7 @@ contract BIBRewardToken is Ownable, ERC20 {
     function processDividendTracker(uint256 gas) external onlyOwner {
         (uint256 iterations, uint256 claims, uint256 lastProcessedIndex) = dividendTracker.process(gas);
         require(tx.origin == msg.sender);//add 
-        emit ProcessedDividendTracker(iterations, claims, lastProcessedIndex, false, gas, tx.origin);//？？tx.origin 过期， context合约
+        emit ProcessedDividendTracker(iterations, claims, lastProcessedIndex, false, gas, tx.origin);
     }
  
     function claim() external {
@@ -369,11 +282,6 @@ contract BIBRewardToken is Ownable, ERC20 {
  
     function getNumberOfDividendTokenHolders() external view returns(uint256) {
         return dividendTracker.getNumberOfTokenHolders();
-    }
-
-    function setMarketingWallet(address newWallet) external onlyOwner{
-        require(newWallet != address(0), "newWallet is not the zero address");
-        _marketingWallet = payable(newWallet);
     }
 
     function setLiquidityWallet(address liquidity) external onlyOwner{
@@ -422,10 +330,6 @@ contract BIBRewardToken is Ownable, ERC20 {
             uint256 swapTokens = contractTokenBalance.mul(
                 sellFee.liquidityFee).mul(decimals()).div(totalFee).div(decimals());
             swapAndLiquify(swapTokens);
-
-            uint256 marketingTokens = contractTokenBalance.mul(
-                sellFee.blackholeFee).mul(decimals()).div(totalFee).div(decimals());
-            swapAndSendToMarketing(marketingTokens);
  
             uint256 sellTokens = contractTokenBalance.mul(
                 sellFee.rewardFee).mul(decimals()).div(totalFee).div(decimals());
@@ -469,25 +373,6 @@ contract BIBRewardToken is Ownable, ERC20 {
         }
     }
     
-    //发送给营销钱包手续费用
-    function swapAndSendToMarketing(uint256 tokens) private {
-        uint256 initialBalance = address(this).balance;
-        swapTokensForBusd(tokens);
-        uint256 newBalance = address(this).balance.sub(initialBalance);
-         payable(_marketingWallet).transfer(newBalance); 
-    }
-
-    function swapAndSendTotreasury(uint256 tokens) private lockTheSwap {
- 
-        uint256 initialBalance = address(this).balance;
- 
-        swapTokensForBusd(tokens);
-        // how much USDT did we just swap into?
-        uint256 newBalance = address(this).balance.sub(initialBalance);
-
-         _treasuryWallet.transfer(newBalance); 
-    }
-    
     function addLiquidity(uint256 tokenAmount, uint256 ethAmount) private {
 
         // approve token transfer to cover all possible scenarios
@@ -503,15 +388,6 @@ contract BIBRewardToken is Ownable, ERC20 {
             block.timestamp
         );
 
-    }
-
-    function swapAndSendToFee(uint256 tokens) private  {
-
-        uint256 initialBUSDBalance = IERC20(BUSD).balanceOf(address(this));
-
-        swapTokensForBusd(tokens);
-        uint256 newBalance = (IERC20(BUSD).balanceOf(address(this))).sub(initialBUSDBalance);
-        IERC20(BUSD).transfer(_marketingWallet, newBalance);
     }
     
     function swapAndLiquify(uint256 tokens) private lockTheSwap{
@@ -583,10 +459,6 @@ contract BIBRewardToken is Ownable, ERC20 {
         isBlacklisted[account] = blacklist;
     }
 
-    
-    // function setAutomatedMarketMakerPair(address _pair, bool value) public onlyOwner {
-    //     automatedMarketMakerPairs[_pair] = value;
-    // }
 
     function swapAndSendDividends(uint256 tokens) private{
         swapTokensForBusd(tokens);
