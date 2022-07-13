@@ -19,8 +19,8 @@ contract BIBRewardToken is Initializable, ERC20Upgradeable, PausableUpgradeable,
     IUniswapV2Router02 public uniswapV2Router;
     address public uniswapV2Pair;
     address public constant deadAddress = 0x000000000000000000000000000000000000dEaD;
-    address public BUSD; //BUSD
-    address public Router;
+    address public BUSD = 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56; //BUSD
+    address public Router = 0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3;
     //0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56 bsc testnet
     //address(0x78867BbEeF44f2326bF8DDd1941a4439382EF2A7) bsc mainnet
     // //0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3 bsc testnet router
