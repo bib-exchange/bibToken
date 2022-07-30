@@ -3,11 +3,12 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "./library/SafeMathUint.sol";
-import "./library/SafeMathInt.sol";
-import "./DividendPayingTokenInterface.sol";
-import "./DividendPayingTokenOptionalInterface.sol";
+import "../library/SafeMathUint.sol";
+import "../library/SafeMathInt.sol";
+import "../interface/DividendPayingTokenInterface.sol";
+import "../interface/DividendPayingTokenOptionalInterface.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 
@@ -19,9 +20,8 @@ contract DividendPayingToken is ERC20, Ownable, DividendPayingTokenInterface, Di
   using SafeMath for uint256;
   using SafeMathUint for uint256;
   using SafeMathInt for int256;
-   //0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56 bsc testnet
-    //0x78867BbEeF44f2326bF8DDd1941a4439382EF2A7 bsc mainnet
-  address public BUSD = 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56; //BUSD
+
+  IERC20 rewardToken;
 
   // With `magnitude`, we can properly distribute dividends even if the amount of received ether is small.
   // For more discussion about choosing the value of `magnitude`,
@@ -46,26 +46,8 @@ contract DividendPayingToken is ERC20, Ownable, DividendPayingTokenInterface, Di
 
   uint256 public totalDividendsDistributed;
 
-  constructor(string memory _name, string memory _symbol) ERC20(_name, _symbol) {
-
-  }
-
-  function distributeBUSDDividends(uint256 amount) public onlyOwner{
-    require(totalSupply() > 0);
-
-    if (amount > 0) {
-      magnifiedDividendPerShare = magnifiedDividendPerShare.add(
-        (amount).mul(magnitude) / totalSupply()
-      );
-      emit DividendsDistributed(msg.sender, amount);
-
-      totalDividendsDistributed = totalDividendsDistributed.add(amount);
-    }
-  }
-
-  /// @dev Distributes dividends whenever ether is paid to this contract.
-  receive() external payable {
-    distributeDividends();
+  constructor(address _rewardToken, string memory _name, string memory _symbol) ERC20(_name, _symbol) {
+    rewardToken = IERC20(_rewardToken);
   }
 
   /// @notice Distributes ether to token holders as dividends.
@@ -81,17 +63,17 @@ contract DividendPayingToken is ERC20, Ownable, DividendPayingTokenInterface, Di
   ///     and try to distribute it in the next distribution,
   ///     but keeping track of such data on-chain costs much more than
   ///     the saved ether, so we don't do that.
-  function distributeDividends() public override payable {
-    require(totalSupply() > 0);
+  function _distributeDividends(uint256 amount) internal {
+      require(totalSupply() > 0);
 
-    if (msg.value > 0) {
-      magnifiedDividendPerShare = magnifiedDividendPerShare.add(
-        (msg.value).mul(magnitude) / totalSupply()
-      );
-      emit DividendsDistributed(msg.sender, msg.value);
+      if (amount > 0) {
+          magnifiedDividendPerShare = magnifiedDividendPerShare.add(
+              (amount).mul(magnitude) / totalSupply()
+          );
+          emit DividendsDistributed(msg.sender, amount);
 
-      totalDividendsDistributed = totalDividendsDistributed.add(msg.value);
-    }
+          totalDividendsDistributed = totalDividendsDistributed.add(amount);
+      }
   }
 
   /// @notice Withdraws the ether distributed to the sender.
@@ -107,7 +89,7 @@ function _withdrawDividendOfUser(address payable user) internal returns (uint256
     if (_withdrawableDividend > 0) {
       withdrawnDividends[user] = withdrawnDividends[user].add(_withdrawableDividend);
       emit DividendWithdrawn(user, _withdrawableDividend);
-      bool success = IERC20(BUSD).transfer(user, _withdrawableDividend);
+      bool success = rewardToken.transfer(user, _withdrawableDividend);
 
       if(!success) {
         withdrawnDividends[user] = withdrawnDividends[user].sub(_withdrawableDividend);
