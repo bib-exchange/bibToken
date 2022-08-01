@@ -137,7 +137,6 @@ contract BIBToken is Initializable, ERC20Upgradeable, PausableUpgradeable, Ownab
         setFeeWhiteList(address(this), true, true);
         setFeeWhiteList(_uniswapV2Pair, true, true);
         setFeeWhiteList(deadAddress, true, false);
-        setNoProcessList(_uniswapV2Pair, true);
 
         swapEnabled = true;
     }
