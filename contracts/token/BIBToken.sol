@@ -31,15 +31,15 @@ contract BIBToken is Initializable, ERC20Upgradeable, PausableUpgradeable, Ownab
     bool private swapping;
 
     ITokenDividendTracker public dividendTracker;
-    address public liquidityWallet;
+    address public w0;
     address public tokenOwner;
-    address public devAddr;
-    address public ecologyAddr;
-    address public privateSaleAddr;
-    address public idoieoAddr;
-    address public marketingAddr;
-    address public nftminingAddr; 
-    address public businessAddr;
+    address public w1;
+    address public w2;
+    address public w3;
+    address public w4;
+    address public w5;
+    address public w6; 
+    address public w7;
     uint public decimalVal = 1e18;
 
     uint256 public maxSellTransactionAmount = 10_000_000_000_000 * decimalVal;
@@ -55,7 +55,6 @@ contract BIBToken is Initializable, ERC20Upgradeable, PausableUpgradeable, Ownab
 
     mapping(address => bool) public isFromWhiteList;
     mapping(address => bool) public isToWhiteList;
-    mapping(address => bool) public isBlacklisted;
     mapping(address => bool) public noProcessList;
     address private canStopAntibotMeasures;
     uint256 public antibotEndTime;
@@ -63,8 +62,6 @@ contract BIBToken is Initializable, ERC20Upgradeable, PausableUpgradeable, Ownab
     // store addresses that a automatic market maker pairs. Any transfer *to* these addresses
     // could be subject to a maximum transfer amount
     mapping (address => bool) public automatedMarketMakerPairs;
-
-    event UpdateDividendTracker(address indexed newAddress, address indexed oldAddress);
 
     event UpdateUniswapV2Router(address indexed newAddress, address indexed oldAddress);
 
@@ -74,7 +71,6 @@ contract BIBToken is Initializable, ERC20Upgradeable, PausableUpgradeable, Ownab
 
     event SetAutomatedMarketMakerPair(address indexed pair, bool indexed value);
 
-    event LiquidityWalletUpdated(address indexed newLiquidityWallet, address indexed oldLiquidityWallet);
     event GasForProcessingUpdated(uint256 indexed newValue, uint256 indexed oldValue);
     event SwapTokensAtAmountUpdated(uint256 indexed newValue, uint256 indexed oldValue);
 
@@ -150,73 +146,52 @@ contract BIBToken is Initializable, ERC20Upgradeable, PausableUpgradeable, Ownab
     }
 
     function initAddress(
-        address _devAddr,
-        address _ecologyAddr,
-        address _privateSaleAddr,
-        address _idoieoAddr,
-        address _liquidityWallet,
-        address _marketingAddr,
-        address _nftminingAddr,
-        address _businessAddr) public onlyOwner {
-        require(_devAddr != address(0), "_dev is not the zero address");
-        require(_ecologyAddr != address(0), "_ecology is not the zero address");
-        require(_privateSaleAddr != address(0), "_privateSale is not the zero address");
-        require(_idoieoAddr != address(0), "_idoieoAddr is not the zero address");
-        require(_liquidityWallet != address(0), "_liquidity is not the zero address");
-        require(_marketingAddr != address(0), "_marketing is not the zero address");
-        require(_nftminingAddr != address(0), "_nftmining is not the zero address");
-        require(_businessAddr != address(0), "_business is not the zero address");
+        address _w1,
+        address _w2,
+        address _w3,
+        address _w4,
+        address _w0,
+        address _w5,
+        address _w6,
+        address _w7) public onlyOwner {
+        require(_w1 != address(0), "_w1 is not the zero address");
+        require(_w2 != address(0), "_w2 is not the zero address");
+        require(_w3 != address(0), "_w2 is not the zero address");
+        require(_w4 != address(0), "_w4 is not the zero address");
+        require(_w0 != address(0), "_w0 is not the zero address");
+        require(_w5 != address(0), "_w5 is not the zero address");
+        require(_w6 != address(0), "_w6 is not the zero address");
+        require(_w7 != address(0), "_w7 is not the zero address");
 
-        devAddr = _devAddr;
-        ecologyAddr = _ecologyAddr;
-        privateSaleAddr = _privateSaleAddr;
-        idoieoAddr = _idoieoAddr;
-        liquidityWallet = _liquidityWallet;
-        marketingAddr = _marketingAddr;
-        nftminingAddr = _nftminingAddr;
-        businessAddr = _businessAddr;
-        dividendTracker.excludeFromDividends(address(devAddr));
-        dividendTracker.excludeFromDividends(address(ecologyAddr));
-        dividendTracker.excludeFromDividends(address(privateSaleAddr));
-        dividendTracker.excludeFromDividends(address(idoieoAddr));
-        dividendTracker.excludeFromDividends(address(liquidityWallet));
-        dividendTracker.excludeFromDividends(address(marketingAddr));
-        dividendTracker.excludeFromDividends(address(nftminingAddr));
-        dividendTracker.excludeFromDividends(address(businessAddr));
+        w1 = _w1;
+        w2 = _w2;
+        w3 = _w3;
+        w4 = _w4;
+        w0 = _w0;
+        w5 = _w5;
+        w6 = _w6;
+        w7 = _w7;
+        dividendTracker.excludeFromDividends(address(w1));
+        dividendTracker.excludeFromDividends(address(w2));
+        dividendTracker.excludeFromDividends(address(w3));
+        dividendTracker.excludeFromDividends(address(w4));
+        dividendTracker.excludeFromDividends(address(w0));
+        dividendTracker.excludeFromDividends(address(w5));
+        dividendTracker.excludeFromDividends(address(w6));
+        dividendTracker.excludeFromDividends(address(w7));
     }
 
     receive() external payable {}
 
     function release() public onlyOwner {
-        // Send 15% of tokens to dev wallet 10,000,000,000 bibtoken
-        transfer(devAddr,(initialSupply.mul(15).div(100))); 
-        // Send 23% of tokens to ecology wallet 10,000,000,000 bibtoken
-        transfer(ecologyAddr,(initialSupply.mul(23).div(100))); 
-        transfer(privateSaleAddr,(initialSupply.mul(15).div(100)));
-        // Send 15% of tokens to foundation wallet 15,000,000,00 bibtoken
-        transfer(idoieoAddr,(initialSupply.mul(5).div(100)));
-        // Send 5% of tokens to ido wallet 5,000,000,000 bibtoken
-        transfer(liquidityWallet,(initialSupply.mul(3).div(100))); 
-        // Send 3% of tokens to tournaments wallet 35,000,000,000 bibtoken
-        transfer(marketingAddr,(initialSupply.mul(8).div(100)));
-        transfer(nftminingAddr,(initialSupply.mul(16).div(100)));
-        // Send 16% of tokens to nftmining wallet 4,000,000,000 bibtoken
-        transfer(businessAddr,(initialSupply.mul(15).div(100)));
-    }
-
-    function updateDividendTracker(address newAddress) public onlyOwner {
-        require(newAddress != address(dividendTracker), "Token: The dividend tracker already has that address");
-        ITokenDividendTracker newDividendTracker = ITokenDividendTracker(payable(newAddress));
-        require(newDividendTracker.controller() == address(this), "Token: The new dividend tracker must be owned by the Token token contract");
-
-        newDividendTracker.excludeFromDividends(address(newDividendTracker));
-        newDividendTracker.excludeFromDividends(address(this));
-        newDividendTracker.excludeFromDividends(owner());
-        newDividendTracker.excludeFromDividends(address(uniswapV2Router));
-
-        emit UpdateDividendTracker(newAddress, address(dividendTracker));
-
-        dividendTracker = newDividendTracker;
+        transfer(w1,(initialSupply.mul(15).div(100))); 
+        transfer(w2,(initialSupply.mul(25).div(100))); 
+        transfer(w3,(initialSupply.mul(15).div(100)));
+        transfer(w4,(initialSupply.mul(2).div(100)));
+        transfer(w0,(initialSupply.mul(3).div(100))); 
+        transfer(w5,(initialSupply.mul(9).div(100)));
+        transfer(w6,(initialSupply.mul(16).div(100)));
+        transfer(w7,(initialSupply.mul(15).div(100)));
     }
 
     function addExcludeFromDividends(address[] memory addrs) public onlyOwner {
@@ -301,7 +276,7 @@ contract BIBToken is Initializable, ERC20Upgradeable, PausableUpgradeable, Ownab
         rewardFee = _rewardfee;
         blackholeFee = _blackhole;
         liquidityFee = _liquidity;
-        require(rewardFee + blackholeFee + liquidityFee > 1, "INVALID_FEE_RATIO");
+        require(rewardFee + blackholeFee + liquidityFee <= 10, "INVALID_FEE_RATIO");
     }
 
     function updateClaimWait(uint256 claimWait) external onlyOwner {
@@ -351,44 +326,44 @@ contract BIBToken is Initializable, ERC20Upgradeable, PausableUpgradeable, Ownab
         return dividendTracker.getNumberOfTokenHolders();
     }
 
-    function setLiquidityWallet(address liquidity) external onlyOwner{
-        require(liquidity != address(0), "liquidity is not the zero address");
-        liquidityWallet = payable(liquidity);
+    function setW0(address w) external onlyOwner{
+        require(w != address(0), "w is not the zero address");
+        w0 = payable(w);
     }
 
-    function setDevAddress(address dev) public onlyOwner {
-        require(dev != address(0), "_dev is not the zero address");
-        devAddr = dev;
+    function setW1Address(address w) public onlyOwner {
+        require(w != address(0), "w is not the zero address");
+        w1 = w;
     }
 
-    function setEcologyAddress(address ecology) public onlyOwner {
-        require(ecology != address(0), "ecology is not the zero address");
-        ecologyAddr = ecology;
+    function setW2Address(address w) public onlyOwner {
+        require(w != address(0), "w is not the zero address");
+        w2 = w;
     }
 
-    function setPrivateSaleAddress(address privateSale) public onlyOwner {
-        require(privateSale != address(0), "privateSale is not the zero address");
-        privateSaleAddr = privateSale;
+    function setW3Address(address w) public onlyOwner {
+        require(w != address(0), "w is not the zero address");
+        w3 = w;
     }
 
-    function setIdoAddress(address idoieo) public onlyOwner {
-        require(idoieo != address(0), "idoieo is not the zero address");
-        idoieoAddr = idoieo;
+    function setW4Address(address w) public onlyOwner {
+        require(w != address(0), "w is not the zero address");
+        w4 = w;
     }
 
-    function setMarketingAddress(address marketing) public onlyOwner {
-        require(marketing != address(0), "marketing is not the zero address");
-        marketingAddr = marketing;
+    function setW5Address(address w) public onlyOwner {
+        require(w != address(0), "w is not the zero address");
+        w5 = w;
     }
 
-    function setNftReserveAddress(address nftmining) public onlyOwner {
-        require(nftmining != address(0), "nftmining is not the zero address");
-        nftminingAddr = nftmining;
+    function setW6Address(address w) public onlyOwner {
+        require(w != address(0), "w is not the zero address");
+        w6 = w;
     }
 
-    function setBusinessAddress(address business) public onlyOwner {
-        require(business != address(0), "business is not the zero address");
-        businessAddr = business;
+    function setW7Address(address w) public onlyOwner {
+        require(w != address(0), "w is not the zero address");
+        w7 = w;
     }
 
     function setFreezeTokenAddress(address _freezeToken) public onlyOwner {
@@ -420,7 +395,6 @@ contract BIBToken is Initializable, ERC20Upgradeable, PausableUpgradeable, Ownab
         require(allowTransfer, "ERC20: unable to transfer");
         require(from != address(0), "ERC20: transfer from the zero address");
         require(to != address(0), "ERC20: transfer to the zero address");
-        require (!isBlacklisted[from] && !isBlacklisted[to], "Blacklisted address");
         require (_checkFreezeAmount(from, amount), "Not enough available balance");
 
         // forbiden bot
@@ -560,12 +534,6 @@ contract BIBToken is Initializable, ERC20Upgradeable, PausableUpgradeable, Ownab
     function setAntiBotStopAddress (address account) external onlyOwner {
         require (account != address(0));
         canStopAntibotMeasures = account;
-    }
-
-    function blacklistAddress (address account, bool blacklist) external onlyOwner {
-        require (isBlacklisted[account] != blacklist);
-        require (account != uniswapV2Pair);
-        isBlacklisted[account] = blacklist;
     }
 
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal whenNotPaused override {
