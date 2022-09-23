@@ -28,6 +28,8 @@
     "bsc-test:deployment": "npm run hardhat-bsc-test -- bsc-test-deployment --verify",
     "bsc:deployment": "npm run hardhat-bsc -- bsc-deployment --verify",
     "dev-deployment": "npm run hardhat -- dev-deployment",
+    "bsc-test:run-exclude": "npm run hardhat-bsc-test -- run-exclude",
+    "bsc:run-exclude": "npm run hardhat-bsc -- run-exclude",
     "ci:clean": "rm -rf ./artifacts ./cache ./types"
   },
   "devDependencies": {

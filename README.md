@@ -69,3 +69,13 @@ npm run --network bsc-test console
 ```bash
 npm run --network bsc console
 ```
+
+7. Add address to whitelist
+- for test-net
+```bash
+npm run bsc-test:run-exclude
+```
+- for main-net
+```bash
+npm run bsc:run-exclude
+```
