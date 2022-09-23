@@ -1,5 +1,9 @@
 {
   "BIBToken": {
+    "bsc": {
+      "address": "0x2B339d46e157Cf93De6A919Aa05350e952F67359",
+      "deployer":"0x6D4954EEED1fc456fA8592b6128bc35c22822E6f"
+    },
     "bsc_test": {
       "address": "0x22110824Eb09737bCEA8756EF382ccc4AA783768",
       "deployer": "0x460ACc177d4b91CCb389A3039a2C8A4bb405E9aC"
@@ -50,6 +54,10 @@
     }
   },
   "TokenDividendTracker": {
+    "bsc": {
+      "address": "0xdab8D9C8B25175C041F327FF6c4687Db673023Db",
+      "deployer": "0x6D4954EEED1fc456fA8592b6128bc35c22822E6f"
+    },
     "bsc_test": {
       "address": "0x4FDE4B4333B1cBee515E78c292d3706A2CB92d86",
       "deployer": "0x460ACc177d4b91CCb389A3039a2C8A4bb405E9aC"
