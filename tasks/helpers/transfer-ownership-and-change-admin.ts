@@ -11,40 +11,12 @@ import { string } from 'hardhat/internal/core/params/argumentTypes';
 // NOTE the deployed name and corresponding artifact name do not match so we'll need to include both here
 const listOfOwnableContractsForProduction = [
   {
-    deployedName: "SoccerStarNft",
-    artifactName: "SoccerStarNft"
+    deployedName: "BIBToken",
+    artifactName: "BIBToken"
   },
   {
-    deployedName: "ComposedSoccerStarNft",
-    artifactName: "ComposedSoccerStarNft"
-  },
-  {
-    deployedName: "SoccerStarNftMarket",
-    artifactName: "SoccerStarNftMarket"
-  },
-  {
-    deployedName: "StakedDividendTracker",
-    artifactName: "StakedDividendTracker"
-  },
-  {
-    deployedName: "StakedSoccerStarNftV2",
-    artifactName: "StakedSoccerStarNftV2"
-  },
-  {
-    deployedName: "BIBNode",
-    artifactName: "BIBNode"
-  },
-  {
-    deployedName: "BIBDividend",
-    artifactName: "BIBDividend"
-  },
-  {
-    deployedName: "BIBStaking",
-    artifactName: "BIBStaking"
-  },
-  {
-    deployedName: "DividendCollector",
-    artifactName: "DividendCollector"
+    deployedName: "TokenDividendTracker",
+    artifactName: "TokenDividendTracker"
   }
 ];
 
@@ -54,7 +26,11 @@ const listOfOwnableContractsForTestnet = [
 
 const listOfProxyContractsForProduction = [
   {
-    deployedName: "example",
+    deployedName: "BIBToken",
+    artifactName: "InitializableAdminUpgradeabilityProxy"
+  },
+  {
+    deployedName: "TokenDividendTracker",
     artifactName: "InitializableAdminUpgradeabilityProxy"
   }
 ];
@@ -62,6 +38,10 @@ const listOfProxyContractsForProduction = [
 const listOfProxyContractsForTestnet = [
   {
     deployedName: "BIBToken",
+    artifactName: "InitializableAdminUpgradeabilityProxy"
+  },
+  {
+    deployedName: "TokenDividendTracker",
     artifactName: "InitializableAdminUpgradeabilityProxy"
   }
 ];
@@ -204,10 +184,15 @@ subtask(
   'change-admin-address',
   'Changes admin address of all proxy contracts in module for a specific network'
 )
-  .addParam('admin', 'Address of the new proxy admin', undefined, types.string)
   .addFlag('debug', 'Print all blockchain transaction information')
-  .setAction(async ({ admin, debug }, localBRE) => {
+  .setAction(async ({debug }, localBRE) => {
     const DRE: HardhatRuntimeEnvironment = await localBRE.run('set-dre');
+
+    let admin = promptUser(`❓ enter the admin to replace:`);
+    if(!admin || "" === admin){
+      console.error(`Invalid admin`);
+      exit(1);
+    }
 
     console.log(`⏳⏳ Starting admin changing...`);
 
@@ -221,9 +206,13 @@ subtask(
     } else {
       listOfProxyContracts = listOfProxyContractsForTestnet;
     }
-
+    const adminKey = process.env.ADMIN || "";
+    if(!!!adminKey || "" === adminKey){
+      console.error(`❌ invalid admin key`);
+      exit(1);
+    }
+    const deployer = (new DRE.ethers.Wallet(adminKey)).connect(DRE.ethers.provider);
     // Deployer address
-    const [deployer] = await getEthersSigners();
     const deployedAddress = await deployer.getAddress();
 
     // Create list of contracts objects from listOfProxyContracts that have deployer's address as the admin address
@@ -247,16 +236,11 @@ subtask(
         `\t\t${listOfContractsToChangeAdmin[i].name} @ "${listOfContractsToChangeAdmin[i].contract.address}"`
       );
     }
-    let confirmation = promptUser(`❓ Type 'change admin' continue: `);
-    if (confirmation != 'change admin') {
-      console.log('❌ Deployment canceled');
-      return;
-    }
     if (DRE.network.name == 'bsc') {
-      const astarConfirmation = promptUser(
-        "❗❗❗ Are you sure you want to run this PRODUCTION CALL? Type 'I UNDERSTAND' to continue: "
+      const confirmation = promptUser(
+        "❗❗❗ Are you sure you want to run this PRODUCTION CALL? Type 'yes' to continue: "
       );
-      if (astarConfirmation != 'I UNDERSTAND') {
+      if (confirmation != 'yes') {
         console.log('❌ You did not enter the right input. Prod call not permitted');
         return;
       }
@@ -279,7 +263,7 @@ subtask(
       }
 
       const contract = listOfContractsToChangeAdmin[i].contract;
-      const transferTxn = await contract.changeAdmin(admin, { nonce: txCount++ });
+      const transferTxn = await contract.connect(deployer).changeAdmin(admin, { nonce: txCount++ });
 
       deployedYetConfirmedTransferTxns.push({ name: contractName, txn: transferTxn });
     }
@@ -305,13 +289,12 @@ task(
   'migrate-owner-and-admin',
   'Will transfer ownership and change admin for all ownable and proxy contracts in module for a specific network'
 )
-  .addOptionalParam('admin', 'Address of the new proxy admin', undefined, types.string)
   .addFlag('debug', 'Print all blockchain transaction information')
   .addFlag('noAdminChange', 'Skips admin change step')
   .addFlag('noOwnershipTransfer', 'Skips ownership transfer step')
   .setAction(
     async (
-      { admin, debug, noAdminChange, noOwnershipTransfer },
+      { debug, noAdminChange, noOwnershipTransfer },
       localBRE
     ) => {
       const DRE: HardhatRuntimeEnvironment = await localBRE.run('set-dre');
@@ -321,7 +304,7 @@ task(
       await DRE.run('compile');
 
       if (!noAdminChange) {
-        await DRE.run('change-admin-address', { admin: admin, debug: debug });
+        await DRE.run('change-admin-address', {debug: debug });
       }
 
       if (!noOwnershipTransfer) {
