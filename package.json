@@ -32,8 +32,8 @@
     "bsc:run-exclude": "npm run hardhat-bsc -- run-exclude",
     "bsc-test:enable-dividend": "npm run hardhat-bsc-test -- enable-dividend --enable",
     "bsc-test:disable-dividend": "npm run hardhat-bsc-test -- enable-dividend",
-    "bsc:enable-dividend": "npm run hardhat-bsc-test -- enable-dividend --enable",
-    "bsc:disable-dividend": "npm run hardhat-bsc-test -- enable-dividend",
+    "bsc:enable-dividend": "npm run hardhat-bsc -- enable-dividend --enable",
+    "bsc:disable-dividend": "npm run hardhat-bsc -- enable-dividend",
     "ci:clean": "rm -rf ./artifacts ./cache ./types"
   },
   "devDependencies": {
