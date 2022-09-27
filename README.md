@@ -1,71 +1,81 @@
-# bib token
-
-# BIB Token
-
 ## Introduction
 
-This project(`BIB token` smart contract) is based on the evm chain.
-
-## Getting Started
-
-This is a hardhat project. To install required node.js modules
+## Set up environment
+1. Pin the npm version for compilling
 
 ```bash
-npm ci
+npm -g -i npm@8.5.5
 ```
-
-To compile the solidity source code
+## Configure contracts
+Locate the `constants.ts`
+1. Setup `admin`
+    Find `getBIBAdminPerNetwork` section and fill address under the specific network
+2. Setup `BUSD`
+    Find `getBUSDTokenPerNetwork` section and fill address under the specific network
+3. Setup `PancakeSwapRouter`
+    Find `getSwapRoterPerNetwork` section and fill address under the specific network
+3. Setup `Ecosystem distribution part`
+    Find `getEosystemVaultPartPerNetwork` section and fill address under the specific network
+4. Setup `Team distribution part`
+    Find `getProjectTeamPartPerNetwork` section and fill address under the specific network
+5. Setup `Private sale distribution part`
+    Find `getPrivateSellPartPerNetwork` section and fill address under the specific network
+6. Setup `Public sale distribution part`
+    Find `getPulicSellPartPerNetwork` section and fill address under the specific network
+7. Setup `Liquidity distribution part`
+    Find `getLiquidtyPartPerNetwork` section and fill address under the specific network
+8. Setup `Marketting incentive distribution part`
+    Find `getMarkettingPartPerNetwork` section and fill address under the specific network
+9. Setup `Incentive distribution part`
+    Find `getIncentivePartPerNetwork` section and fill address under the specific network
+10. Setup `Coperation distribution part`
+    Find `getCoperationPartPerNetwork` section and fill address under the specific network
+## Deploy and debug
+1. Clean internal output
 
 ```bash
-yarn compile
+npm ci:clean
 ```
 
-To run ERC20 unit test
+2. Compile source code
 
 ```bash
-yarn test
+npm run compile
 ```
 
-To run ERC721/NFT unit test
+3. To run test (Skip over if not needed)
 
 ```bash
-yarn test
+npm run test
 ```
 
-To deploy the smart contract on Ethereum ropsten testnet
-
+4. Deploy to network
+- Deploy to test network
 ```bash
-yarn deploy
-
-npx hardhat run deploy/deploy_bibtoken.js --network rinkeby
-
-
-yarn deploy_crowdsale
-npx hardhat run deploy/deploy_crowdsale.js --network rinkeby
+npm run bsc-test:deployment
+```
+- Deploy to main network
+```bash
+npm run bsc:deployment
 ```
 
+5. Open console
+- for test net
+```bash
+npm run --network bsc-test console
+```
+- for main net
+6. To open console on mainnet
+```bash
+npm run --network bsc console
+```
 
-
-## Test report
-
-Unit test and performance(gas consumption) results, please see [test report](docs/test_report.txt) and [gas consumption test report](docs/performance_test.txt).
-
-## Version history
-
-Change, please see [Change log](docs/CHANGELOG.md) for changes.
-
-## Contribute
-
-Any contribution is welcomed to make it better.
-
-If you have any questions, please create an [issue]().
-
-## Security report
-
-If you have any security issue, please send to <security@bib.io>.
-
-## License
-
-
-
-[MIT LICENSE](LICENSE)
+7. Add address to whitelist
+- for test-net
+```bash
+npm run bsc-test:run-exclude
+```
+- for main-net
+```bash
+npm run bsc:run-exclude
+```

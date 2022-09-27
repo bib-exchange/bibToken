@@ -1,0 +1,30 @@
+❗❗❗ Type the address to continue: 0x8E94fEeA3425C6e977E595CEA5E163940FDeD1f2
+(node:24560) ExperimentalWarning: stream/web is an experimental feature. This feature could change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+⏳ Try to add 0x8E94fEeA3425C6e977E595CEA5E163940FDeD1f2 to transfer && dividend && noporcess special cases  
+        🏁 Added 0x8E94fEeA3425C6e977E595CEA5E163940FDeD1f2 to transfer-out white list
+        🏁 Added 0x8E94fEeA3425C6e977E595CEA5E163940FDeD1f2 to transfer-in white list
+        🏁 Added 0x8E94fEeA3425C6e977E595CEA5E163940FDeD1f2 to divided exlude list
+        🏁 Added 0x8E94fEeA3425C6e977E595CEA5E163940FDeD1f2 to noprocess list
+➜  bibcoin git:(master) ✗ npm run bsc:run-exclude
+
+> bibmeta@1.0.0 bsc:run-exclude
+> npm run hardhat-bsc -- run-exclude
+
+
+> bibmeta@1.0.0 hardhat-bsc
+> cross-env hardhat --network bsc run-exclude
+
+You are using a version of Node.js that is not supported by Hardhat, and it may work incorrectly, or not work at all.
+
+Please, make sure you are using a supported version of Node.js.
+
+To learn more about which versions of Node.js are supported go to https://hardhat.org/nodejs-versions
+❗❗❗ Type the address to continue: 0x08d2F5Aa6bCE6bc03b6460597FFE39bF3E147211
+(node:24774) ExperimentalWarning: stream/web is an experimental feature. This feature could change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+⏳ Try to add 0x08d2F5Aa6bCE6bc03b6460597FFE39bF3E147211 to transfer && dividend && noporcess special cases  
+        🏁 Added 0x08d2F5Aa6bCE6bc03b6460597FFE39bF3E147211 to transfer-out white list
+        🏁 Added 0x08d2F5Aa6bCE6bc03b6460597FFE39bF3E147211 to transfer-in white list
+        🏁 Added 0x08d2F5Aa6bCE6bc03b6460597FFE39bF3E147211 to divided exlude list
+        🏁 Added 0x08d2F5Aa6bCE6bc03b6460597FFE39bF3E147211 to noprocess list

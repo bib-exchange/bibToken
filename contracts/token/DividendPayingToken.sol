@@ -5,23 +5,30 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "../library/SafeMathUint.sol";
 import "../library/SafeMathInt.sol";
 import "../interface/DividendPayingTokenInterface.sol";
 import "../interface/DividendPayingTokenOptionalInterface.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-
 
 /// @title Dividend-Paying Token
 /// @dev A mintable ERC20 token that allows anyone to pay and distribute ether
 ///  to token holders as dividends and allows token holders to withdraw their dividends.
 ///  Reference: the source code of PoWH3D: https://etherscan.io/address/0xB3775fB83F7D12A36E0475aBdD1FCA35c091efBe#code
-contract DividendPayingToken is ERC20, Ownable, DividendPayingTokenInterface, DividendPayingTokenOptionalInterface {
+abstract contract DividendPayingToken is Initializable, 
+ERC20Upgradeable, 
+PausableUpgradeable, 
+OwnableUpgradeable, 
+DividendPayingTokenInterface, 
+DividendPayingTokenOptionalInterface {
   using SafeMath for uint256;
   using SafeMathUint for uint256;
   using SafeMathInt for int256;
 
-  IERC20 rewardToken;
+  IERC20 internal rewardToken;
 
   // With `magnitude`, we can properly distribute dividends even if the amount of received ether is small.
   // For more discussion about choosing the value of `magnitude`,
@@ -46,8 +53,15 @@ contract DividendPayingToken is ERC20, Ownable, DividendPayingTokenInterface, Di
 
   uint256 public totalDividendsDistributed;
 
-  constructor(address _rewardToken, string memory _name, string memory _symbol) ERC20(_name, _symbol) {
-    rewardToken = IERC20(_rewardToken);
+  function initialize(
+      address _rewardToken
+  ) initializer public {
+      require(address(0) != _rewardToken, "INVALID_ADDRESS");
+      rewardToken = IERC20(_rewardToken);
+      
+      __Ownable_init();
+      __Pausable_init();
+      __ERC20_init("Token_Dividend_Tracker", "Token_Dividend_Tracker");
   }
 
   /// @notice Distributes ether to token holders as dividends.
