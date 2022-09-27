@@ -6,9 +6,8 @@ import "../library/IterableMapping.sol";
 import "../interface/ITokenDividendTracker.sol";
 import "./DividendPayingToken.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract TokenDividendTracker is Ownable, DividendPayingToken {
+contract TokenDividendTracker is DividendPayingToken {
     using SafeMath for uint256;
     using SafeMathInt for int256;
     using IterableMapping for IterableMapping.Map;
@@ -23,15 +22,12 @@ contract TokenDividendTracker is Ownable, DividendPayingToken {
     mapping (address => uint256) public lastClaimTimes;
 
     uint256 public claimWait = 1 hours;
-    uint256 public immutable minimumTokenBalanceForDividends = 1e5 * (10**9);
+    uint256 public constant minimumTokenBalanceForDividends = 1e5 * (10**9);
 
     event ExcludeFromDividends(address indexed account);
     event ClaimWaitUpdated(uint256 indexed newValue, uint256 indexed oldValue);
 
     event Claim(address indexed account, uint256 amount, bool indexed automatic);
-
-    constructor(address rewardToken) DividendPayingToken(rewardToken,"Token_Dividend_Tracker", "Token_Dividend_Tracker") {
-    }
 
     function controller() public view returns(address){
         return cntr;

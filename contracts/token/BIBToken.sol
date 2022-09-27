@@ -40,14 +40,13 @@ contract BIBToken is Initializable, ERC20Upgradeable, PausableUpgradeable, Ownab
     address public w5;
     address public w6; 
     address public w7;
-    uint public decimalVal = 1e18;
+    uint public constant decimalVal = 1e18;
 
-    uint256 public maxSellTransactionAmount = 10_000_000_000_000 * decimalVal;
     uint256 public swapTokensAtAmount = 1000_000_000 * decimalVal;
 
     bool public swapEnabled;
 
-    uint256 initialSupply = 100_000_000_000 * decimalVal;
+    uint256 constant initialSupply = 100_000_000_000 * decimalVal;
 
     // use by default 300,000 gas to process auto-claiming dividends
     uint256 public gasForProcessing = 300000;
@@ -57,7 +56,6 @@ contract BIBToken is Initializable, ERC20Upgradeable, PausableUpgradeable, Ownab
     mapping(address => bool) public isToWhiteList;
     mapping(address => bool) public noProcessList;
     address private canStopAntibotMeasures;
-    uint256 public antibotEndTime;
 
     // store addresses that a automatic market maker pairs. Any transfer *to* these addresses
     // could be subject to a maximum transfer amount
@@ -105,6 +103,13 @@ contract BIBToken is Initializable, ERC20Upgradeable, PausableUpgradeable, Ownab
         __Pausable_init();
         __Ownable_init();
 
+        // initialze varables
+        gasForProcessing = 300000;
+        rewardFee = 6;
+        blackholeFee = 1;
+        liquidityFee = 3;
+        swapTokensAtAmount = 1000_000_000 * decimalVal;
+
         require(address(0) != _rewardToken, "INVLID_REWARD_TOKEN");
         require(address(0) != _dividendTracker, "INVLID_DIVIDENTTRACKER");
         require(address(0) != _router, "INVLID_ROUTER");
@@ -131,7 +136,7 @@ contract BIBToken is Initializable, ERC20Upgradeable, PausableUpgradeable, Ownab
         // exclude from paying fees or having max transaction amount
         setFeeWhiteList(owner(), true, true);
         setFeeWhiteList(address(this), true, true);
-        setFeeWhiteList(_uniswapV2Pair, true, true);
+        //setFeeWhiteList(_uniswapV2Pair, true, true);
         setFeeWhiteList(deadAddress, true, false);
 
         swapEnabled = true;
@@ -397,21 +402,9 @@ contract BIBToken is Initializable, ERC20Upgradeable, PausableUpgradeable, Ownab
         require(to != address(0), "ERC20: transfer to the zero address");
         require (_checkFreezeAmount(from, amount), "Not enough available balance");
 
-        // forbiden bot
-        if (from != owner() && to != owner() && (block.timestamp <= antibotEndTime || antibotEndTime == 0)) {
-            require (to == canStopAntibotMeasures, "Timerr: Bots can't stop antibot measures");
-            if (antibotEndTime == 0)
-                antibotEndTime = block.timestamp + 3;
-        }
-
         if(amount == 0) {
             super._transfer(from, to, 0);
             return;
-        }
-
-        // Check max wallet
-        if (from != owner() && to != uniswapV2Pair){
-            require (balanceOf(to) + amount <= maxSellTransactionAmount, " Receiver's wallet balance exceeds the max wallet amount");
         }
 
         // check if have sufficient balance

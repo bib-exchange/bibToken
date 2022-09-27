@@ -1,0 +1,106 @@
+{
+  "BIBToken": {
+    "bsc_test": {
+      "address": "0x22110824Eb09737bCEA8756EF382ccc4AA783768",
+      "deployer": "0x460ACc177d4b91CCb389A3039a2C8A4bb405E9aC"
+    },
+    "hardhat": {
+      "address": "0x8858eeB3DfffA017D4BCE9801D340D36Cf895CCf",
+      "deployer": "0xc783df8a850f42e7F7e57013759C285caa701eB6"
+    },
+    "bsc": {
+      "address": "0x2B339d46e157Cf93De6A919Aa05350e952F67359",
+      "deployer": "0x6D4954EEED1fc456fA8592b6128bc35c22822E6f"
+    }
+  },
+  "BIBTokenImpl": {
+    "bsc_test": {
+      "address": "0x47420B2491AFDA060062DF1631769726F01C1517",
+      "deployer": "0x460ACc177d4b91CCb389A3039a2C8A4bb405E9aC"
+    },
+    "hardhat": {
+      "address": "0x7c2C195CD6D34B8F845992d380aADB2730bB9C6F",
+      "deployer": "0xc783df8a850f42e7F7e57013759C285caa701eB6"
+    },
+    "bsc": {
+      "address": "0x8f57B16aBA22480F805707847e5Bc079168455B0",
+      "deployer": "0x6D4954EEED1fc456fA8592b6128bc35c22822E6f"
+    }
+  },
+  "InitializableAdminUpgradeabilityProxy": {
+    "bsc_test": {
+      "address": "0x4FDE4B4333B1cBee515E78c292d3706A2CB92d86",
+      "deployer": "0x460ACc177d4b91CCb389A3039a2C8A4bb405E9aC"
+    },
+    "hardhat": {
+      "address": "0xf784709d2317D872237C4bC22f867d1BAe2913AB",
+      "deployer": "0xc783df8a850f42e7F7e57013759C285caa701eB6"
+    },
+    "bsc": {
+      "address": "0xdab8D9C8B25175C041F327FF6c4687Db673023Db",
+      "deployer": "0x6D4954EEED1fc456fA8592b6128bc35c22822E6f"
+    }
+  },
+  "IterableMapping": {
+    "bsc_test": {
+      "address": "0xE393e073Cfee986E087B8843E22111134eC1eE5B",
+      "deployer": "0x460ACc177d4b91CCb389A3039a2C8A4bb405E9aC"
+    },
+    "hardhat": {
+      "address": "0x0078371BDeDE8aAc7DeBfFf451B74c5EDB385Af7",
+      "deployer": "0xc783df8a850f42e7F7e57013759C285caa701eB6"
+    },
+    "bsc": {
+      "address": "0x7ced35Dc3AEc75eB6466613E36896790154df58c",
+      "deployer": "0x6D4954EEED1fc456fA8592b6128bc35c22822E6f"
+    }
+  },
+  "TokenDividendTrackerImpl": {
+    "bsc_test": {
+      "address": "0xDAAb1A6deD7e813cC677e0D6C821c7e74E9A1791",
+      "deployer": "0x460ACc177d4b91CCb389A3039a2C8A4bb405E9aC"
+    },
+    "hardhat": {
+      "address": "0xf4e77E5Da47AC3125140c470c71cBca77B5c638c",
+      "deployer": "0xc783df8a850f42e7F7e57013759C285caa701eB6"
+    },
+    "bsc": {
+      "address": "0x89702747B9239524E108F4Dbf720fCb753A7f4f4",
+      "deployer": "0x6D4954EEED1fc456fA8592b6128bc35c22822E6f"
+    }
+  },
+  "TokenDividendTracker": {
+    "bsc_test": {
+      "address": "0x4FDE4B4333B1cBee515E78c292d3706A2CB92d86",
+      "deployer": "0x460ACc177d4b91CCb389A3039a2C8A4bb405E9aC"
+    },
+    "hardhat": {
+      "address": "0xf784709d2317D872237C4bC22f867d1BAe2913AB",
+      "deployer": "0xc783df8a850f42e7F7e57013759C285caa701eB6"
+    },
+    "bsc": {
+      "address": "0xdab8D9C8B25175C041F327FF6c4687Db673023Db",
+      "deployer": "0x6D4954EEED1fc456fA8592b6128bc35c22822E6f"
+    }
+  },
+  "VestingToken": {
+    "bsc_test": {
+      "address": "0x6D0c23AC86531d95fee1Cb7d350aF3f4E9216b2e",
+      "deployer": "0x460ACc177d4b91CCb389A3039a2C8A4bb405E9aC"
+    },
+    "bsc": {
+      "address": "0x14bCCEd9279756FC05EE7cacf64fB4A5311F8DFa",
+      "deployer": "0x6D4954EEED1fc456fA8592b6128bc35c22822E6f"
+    }
+  },
+  "TeamVesting": {
+    "bsc_test": {
+      "address": "0x6D0c23AC86531d95fee1Cb7d350aF3f4E9216b2e",
+      "deployer": "0x460ACc177d4b91CCb389A3039a2C8A4bb405E9aC"
+    },
+    "bsc": {
+      "address": "0x14bCCEd9279756FC05EE7cacf64fB4A5311F8DFa",
+      "deployer": "0x6D4954EEED1fc456fA8592b6128bc35c22822E6f"
+    }
+  }
+}
